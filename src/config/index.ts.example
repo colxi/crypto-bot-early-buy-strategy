@@ -1,0 +1,18 @@
+export const config = {
+  gate: {
+    key: "",
+    secret: "",
+  },
+  buy: {
+    buyDistancePercent: 0.01,
+    minimumOperationCostUSD: 20,
+  },
+  stopLoss: {
+    triggerDistancePercent: -2,
+    sellDistancePercent: -4,
+  },
+  sell: {
+    sellDistancePercent: 7,
+  }
+}
+
