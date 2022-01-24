@@ -6,6 +6,11 @@ import { getSymbolsFromMessage } from './message-process'
 import { Operation } from './operation'
 
 
+const AllowedSignals = [
+  "Binance Will List",
+  "자산 추가",
+  "launching on Coinbase Pro"
+]
 export class EarlyBuyBot {
   constructor(gate: GateClient, socket: WebsocketConnection) {
     this.gate = gate
@@ -17,6 +22,8 @@ export class EarlyBuyBot {
     this.socket.subscribe('message', (event) => {
       const { message } = event.detail
       if (typeof message === 'string') {
+        let isSupportedSignal: boolean = AllowedSignals.some(i => message.includes(i))
+        if (!isSupportedSignal) return
         const announcement = getSymbolsFromMessage(message)
         if (!announcement) return
         console.log('MESSAGE :', message)
