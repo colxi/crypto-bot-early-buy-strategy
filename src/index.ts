@@ -3,6 +3,7 @@ import { GateClient } from './lib/gate-client'
 import { config } from './config'
 import { EarlyBuyBot } from './bot'
 import { GateOrderDetails } from './lib/gate-client/types'
+import { testSymbols } from './bot/_test/test'
 
 console.clear()
 
@@ -37,6 +38,8 @@ function createWebsocket(): Promise<WebsocketConnection> {
     socket.subscribe('connect', (event) => {
       startTime = Date.now()
       socket.send('ping')
+      // DELETE THIS!!!
+      resolve(socket)
     })
 
     socket.connect()
