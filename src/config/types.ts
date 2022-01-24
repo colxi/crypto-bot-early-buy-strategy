@@ -4,6 +4,7 @@ export interface BotConfig {
     gate: {
         key: string
         secret: string
+        feesPercent: number
     },
     operation: {
         minimumOperationCostUSD: number

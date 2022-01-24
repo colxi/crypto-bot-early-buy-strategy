@@ -8,7 +8,12 @@ import path from 'path/posix'
 export class Logger {
   constructor(filename: string) {
     this.filename = filename
-    this.filepath = path.join(config.logsPath, `${this.filename}.txt`)
+    const isWindows = process.platform === "win32"
+    if (isWindows) {
+      this.filepath = `${process.cwd()}\\${config.logsPath}\\${this.filename}.txt`
+    } else {
+      this.filepath = path.join(process.cwd(), config.logsPath, `${this.filename}.txt`)
+    }
   }
 
   private readonly filename: string

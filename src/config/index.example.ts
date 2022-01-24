@@ -1,11 +1,12 @@
 import { BotConfig } from './types'
 
-export const config: BotConfig= {
+export const config: BotConfig = {
   socketAddr: 'ws://ADDRESS:IP',
-  logsPath: './operation-logs/',
+  logsPath: 'operation-logs',
   gate: {
     key: "GATE_KEY",
     secret: "GATE_SECRET",
+    feesPercent: 0.2,
   },
   operation: {
     minimumOperationCostUSD: 20,
@@ -38,8 +39,7 @@ export const config: BotConfig= {
  * .......................................... : ASSET_PRICE (entry point)
  * 
  * 
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! : STOPLOSS TRIGGER (BUY_PRICE - stopLoss.triggerDistancePercent) 
- * ------------------------------------------ : STOPLOSS EXECUTE (BUY_PRICE - stopLoss.sellDistancePercent) 
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! : STOP_LOSS_TRIGGER_PRICE (BUY_PRICE - stopLoss.triggerDistancePercent) 
+ * ------------------------------------------ : STOP_LOSS_EXECUTE_PRICE (BUY_PRICE - stopLoss.sellDistancePercent) 
  * 
  */
-

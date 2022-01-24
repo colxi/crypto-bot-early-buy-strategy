@@ -1,4 +1,4 @@
-export function getDateAsDDMMYYYY(dateOrTimestamp: Date | number = new Date()): string {
+export function getDateAsDDMMYYYY(dateOrTimestamp: Date | number = new Date(), divider = '-'): string {
   const date = (typeof dateOrTimestamp === 'number')
     ? new Date(dateOrTimestamp)
     : dateOrTimestamp
@@ -6,20 +6,19 @@ export function getDateAsDDMMYYYY(dateOrTimestamp: Date | number = new Date()): 
   const month = date.getMonth() + 1
   const year = date.getFullYear()
   return month < 10
-    ? `${day}-0${month}-${year}`
-    : `${day}-${month}-${year}`
+    ? `${day}${divider}0${month}${divider}${year}`
+    : `${day}${divider}${month}${divider}${year}`
 }
 
-export function getTimeAsHHMMSS(dateOrTimestamp: Date | number = new Date()): string {
+export function getTimeAsHHMMSS(dateOrTimestamp: Date | number = new Date(), divider = ':'): string {
   const date = (typeof dateOrTimestamp === 'number')
     ? new Date(dateOrTimestamp)
     : dateOrTimestamp
   const hour = String(date.getHours()).padStart(2, '0')
   const minute = String(date.getMinutes()).padStart(2, '0')
   const seconds = String(date.getSeconds()).padStart(2, '0')
-  return `${hour}:${minute}:${seconds}`
+  return `${hour}${divider}${minute}${divider}${seconds}`
 }
-
 
 export enum TimeInMillis {
   ONE_SECOND = 1000,
