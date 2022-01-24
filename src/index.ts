@@ -2,8 +2,7 @@ import WebsocketConnection from './lib/websocket'
 import { GateClient } from './lib/gate-client'
 import { config } from './config'
 import { EarlyBuyBot } from './bot'
-import { GateOrderDetails } from './lib/gate-client/types'
-import { testSymbols } from './bot/_test/test'
+import { handleSignalInterrupt } from './lib/sigint'
 
 console.clear()
 
@@ -73,6 +72,7 @@ function validateConfig() {
 
 
 async function init(): Promise<void> {
+  handleSignalInterrupt()
   validateConfig()
   const socket: WebsocketConnection = await createWebsocket()
   const gate: GateClient = await GateClient.create(config.gate.key, config.gate.secret)
