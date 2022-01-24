@@ -1,18 +1,11 @@
 {
-  "name": "early-buy-bot",
+  "name": "crypto-bot-early-buy-strategy",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "colxi",
   "dependencies": {
-    "chart.js": "^2.9.4",
-    "comment-json": "^4.1.0",
-    "express": "^4.17.1",
     "gate-api": "^5.22.4",
-    "google-trends-api": "^4.9.0",
-    "lodash": "^4.17.15",
-    "mysql": "^2.17.1",
-    "node-binance-api": "^0.12.4",
     "node-fetch": "^2.6.0",
     "rest-api-service": "^1.0.26",
     "sqlite3": "^5.0.2",
@@ -20,11 +13,6 @@
     "ws": "^7.4.3"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.6",
-    "@types/express": "^4.17.2",
-    "@types/express-request-id": "^1.4.1",
-    "@types/lodash": "^4.14.155",
-    "@types/mysql": "^2.15.8",
     "@types/node": "^15.12.4",
     "@types/node-fetch": "^2.5.7",
     "@types/sqlite3": "^3.1.7",
