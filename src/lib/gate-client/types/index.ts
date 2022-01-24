@@ -34,6 +34,5 @@ export interface GateClientOptions {
   client: ApiClient
   spot: SpotApi
   wallet: WalletApi
-  balance: number,
   assetPairs: AssetPairsMap
 }

@@ -1,18 +1,32 @@
 import WebSocket from 'ws'
+import EventedService from '../evented-service'
+import { CustomEvent } from '../evented-service/custom-event'
 import {
   WebSocketStatus,
   WebsocketConnectionConfig,
-  WebsocketOnMessageCallback,
-  WebsocketOnConnectCallback
 } from './types'
 
 
-export default class WebsocketConnection {
+type ServiceEvents = {
+  message: (event: WebsocketMessageEvent) => void
+  connect: (event: WebsocketConnectionEvent) => void
+}
+
+class WebsocketMessageEvent extends CustomEvent<{
+  context: WebsocketConnection,
+  message: Record<string, unknown> | string
+}>{ }
+
+class WebsocketConnectionEvent extends CustomEvent<{
+  context: WebsocketConnection,
+}>{ }
+
+
+export default class WebsocketConnection extends EventedService<ServiceEvents>{
   constructor(config: WebsocketConnectionConfig) {
+    super(['message', 'connect'])
     this.#log = config.logger || this.#log
     this.host = config.host
-    this.#onConnectCallback = config.onConnectCallback || null
-    this.#onMessageCallback = config.onMessageCallback
     this.reconnectOnDisconnection = config.reconnectOnDisconnection
     this.reconnectOnDisconnectionDelay = config.reconnectOnDisconnectionDelay
     this.pingServiceInterval = 5000
@@ -33,9 +47,6 @@ export default class WebsocketConnection {
   #isRequestedDisconnection: boolean
   #pingServiceTimer: NodeJS.Timeout | null = null
   #pingServiceLastPong: number = 0
-  #onConnectCallback: WebsocketOnConnectCallback | null
-  #onMessageCallback: WebsocketOnMessageCallback
-
 
   public get sentMessagesCount(): number {
     return this.#sentMessagesCount
@@ -57,23 +68,15 @@ export default class WebsocketConnection {
     return this.#socket?.readyState === WebSocketStatus.CLOSED
   }
 
-  set onConnectCallback(callback: WebsocketOnConnectCallback | null) {
-    this.#onConnectCallback = callback
-  }
-
-  get onConnectCallback(): WebsocketOnConnectCallback | null {
-    return this.#onConnectCallback
-  }
-
   /*----------------------------------------------------------------------------
    *
    * PUBLIC API METHODS
    *
    ---------------------------------------------------------------------------*/
 
-  public send = (payload: Record<string, any> | any[]): void => {
+  public send = (message: unknown): void => {
     if (!this.isConnected) return
-    const msg = JSON.stringify(payload)
+    const msg = JSON.stringify(message)
     this.#socket!.send(msg)
     this.#sentMessagesCount++
   }
@@ -163,8 +166,12 @@ export default class WebsocketConnection {
   }
 
   #onSocketMessage = (msg: string): void => {
-    const parsedMessage = typeof msg === 'object' ? JSON.parse(msg) : msg
-    this.#onMessageCallback(this, parsedMessage)
+    let message: string | Record<string, any> = msg
+    try {
+      message = JSON.parse(msg)
+    } catch (e) { /* ignore and proceed wit the string */
+    }
+    this.dispatchEvent('message', { context: this, message })
   }
 
   #onSocketError = (e: any): void => {
@@ -174,7 +181,7 @@ export default class WebsocketConnection {
   #onSocketConnect = (): void => {
     this.#log('Connected')
     this.#pingServiceStart()
-    if (this.#onConnectCallback) this.#onConnectCallback(this)
+    this.dispatchEvent('connect', { context: this })
   }
 
   #onSocketDisconnect = (): void => {

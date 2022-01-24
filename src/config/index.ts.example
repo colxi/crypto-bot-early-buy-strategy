@@ -1,11 +1,19 @@
 export const config = {
+  socketAddr: 'ws://<IP_HERE>:<PORT_HERE>', 
   gate: {
-    key: "",
-    secret: "",
+    key: "<GATE_KEY_HERE>",
+    secret: "<GATE_SECRET_HERE>",
+  },
+  operation: {
+    minimumOperationCostUSD: 20,
+    operationUseBalancePercent: 100,
+    maxSimultaneousOperations: 1,
+    priceTrackingIntervalInMillis: 500,
+    orderTrackingIntervalInMillis: 500,
+    emergencySellOrderDistancePercent: -1,
   },
   buy: {
     buyDistancePercent: 0.01,
-    minimumOperationCostUSD: 20,
   },
   stopLoss: {
     triggerDistancePercent: -2,
@@ -15,4 +23,20 @@ export const config = {
     sellDistancePercent: 7,
   }
 }
+
+/**
+ * 
+ * Operation events visualization :
+ * 
+ * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ : SELL_PRICE (BUY_PRICE + sell.sellDistancePercent)
+ * 
+ * 
+ * ++++++++++++++++++++++++++++++++++++++++++ : BUY_PRICE (ASSET_PRICE + buy.buyDistancePercent)
+ * .......................................... : ASSET_PRICE (entry point)
+ * 
+ * 
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! : STOPLOSS TRIGGER (BUY_PRICE - stopLoss.triggerDistancePercent) 
+ * ------------------------------------------ : STOPLOSS EXECUTE (BUY_PRICE - stopLoss.sellDistancePercent) 
+ * 
+ */
 

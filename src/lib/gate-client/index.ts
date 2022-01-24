@@ -1,9 +1,9 @@
-import { ApiClient, SpotApi, WalletApi } from 'gate-api'
+import { ApiClient, Order, SpotApi, WalletApi } from 'gate-api'
 import { TimeInMillis } from '../date'
 import { getAssetPairs } from './helpers/get-assets-pairs'
 import { geAvailableBalanceUSDT } from './helpers/get-balance-usdt'
 import { getLatency } from './helpers/get-latency'
-import { AssetPairsMap, GateClientOptions } from './types'
+import { AssetPair, AssetPairsMap, GateClientOptions, GateOrderDetails, GateOrderId } from './types'
 
 
 export class GateClient {
@@ -12,7 +12,6 @@ export class GateClient {
     this.spot = options.spot
     this.wallet = options.wallet
     this.assetPairs = options.assetPairs
-    this.balance = options.balance
     setInterval(() => void this.updateAssetPairs(), TimeInMillis.ONE_DAY)
   }
 
@@ -21,7 +20,6 @@ export class GateClient {
   public spot: SpotApi
   public wallet: WalletApi
   public assetPairs: AssetPairsMap
-  public balance: number
 
 
   public async updateAssetPairs(): Promise<void> {
@@ -44,7 +42,32 @@ export class GateClient {
   }
 
 
-  public static async create(key: string, secret: string): Promise<GateClient> {
+  public async getAssetPairPrice(assetPair: AssetPair): Promise<number> {
+    const result = await this.spot.listTickers({ 'currencyPair': assetPair })
+    const assetPrice = Number(result.body[0].last)
+    if (!assetPrice) throw new Error(`Unknown error retrieving "${assetPair}" asset price.`)
+    return assetPrice
+  }
+
+
+  public async geAvailableBalanceUSDT(): Promise<number> {
+    return await geAvailableBalanceUSDT(this.spot)
+  }
+
+  public async getOrderStatus(
+    orderId: GateOrderId,
+    assetPair: AssetPair,
+    account = 'spot'
+  ): Promise<Order.Status> {
+    const { response } = await this.spot.getOrder(orderId, assetPair, { account })
+    const order: GateOrderDetails = response.data
+    return order.status
+  }
+
+  public static async create(
+    key: string,
+    secret: string
+  ): Promise<GateClient> {
     console.log('🟢 Initializing Gate Client...')
     const client = new ApiClient()
     client.setApiKeySecret(key, secret)
@@ -57,6 +80,6 @@ export class GateClient {
     console.log('Available Balance:', balance, 'USDT')
     console.log('Available asset pairs:', Object.keys(assetPairs).length)
     console.log()
-    return new GateClient({ client, spot, wallet, balance, assetPairs })
+    return new GateClient({ client, spot, wallet, assetPairs })
   }
 }
