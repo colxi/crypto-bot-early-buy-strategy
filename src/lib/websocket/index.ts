@@ -122,7 +122,7 @@ export default class WebsocketConnection extends EventedService<ServiceEvents>{
     // ensure Ping service is not already running by disabling it before
     // starting a new service
     this.#pingServiceStop()
-    // reset las pong timestamp to current value 
+    // reset last pong timestamp to current value 
     this.#pingServiceLastPong = Date.now()
     // start ping service
     this.#pingServiceTimer = setInterval(

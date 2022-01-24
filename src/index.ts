@@ -50,7 +50,7 @@ async function init(): Promise<void> {
   const gate: GateClient = await GateClient.create(config.gate.key, config.gate.secret)
   const bot = await EarlyBuyBot.create(socket, gate)
   // TEST signal! 
-  // ; (bot as any).createOperation('BTC')
+  //; (bot as any).createOperation('BTC')
 }
 
 init().catch(e => {

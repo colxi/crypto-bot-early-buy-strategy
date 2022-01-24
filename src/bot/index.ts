@@ -56,6 +56,17 @@ export class EarlyBuyBot {
 
     /**
      * 
+     * BLOCK if there is another ongoing Operation with the same AssetPair
+     * 
+     */
+    const assetPair: AssetPair = `${symbol}_USDT`
+    if (this.operations[assetPair]) {
+      console.log(`There is another ongoing Operation for ${assetPair}. Ignoring signal`)
+      return
+    }
+
+    /**
+     * 
      * BLOCK if limit of simultaneous operations is reached
      * 
      */
@@ -63,7 +74,6 @@ export class EarlyBuyBot {
       console.log('Max simultaneous operations limit reached. Ignoring signal')
       return
     }
-
 
     /**
      * 
