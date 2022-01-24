@@ -1,8 +1,11 @@
-export const config = {
-  socketAddr: 'ws://<IP_HERE>:<PORT_HERE>', 
+import { BotConfig } from './types'
+
+export const config: BotConfig= {
+  socketAddr: 'ws://ADDRESS:IP',
+  logsPath: './operation-logs/',
   gate: {
-    key: "<GATE_KEY_HERE>",
-    secret: "<GATE_SECRET_HERE>",
+    key: "GATE_KEY",
+    secret: "GATE_SECRET",
   },
   operation: {
     minimumOperationCostUSD: 20,
