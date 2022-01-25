@@ -6,4 +6,6 @@ if exist node_modules\ (
   CALL yarn
   CALL yarn start:once
 )
+echo Press enter to exit...
+pause >nul
 exit
