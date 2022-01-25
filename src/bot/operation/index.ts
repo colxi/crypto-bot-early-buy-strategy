@@ -44,7 +44,8 @@ export class Operation extends EventedService<ServiceEvents> {
       .then(async () => await this.createStopLossOrder())
       .catch(async (e) => await this.endOperation(OperationEndReason.ERROR, e))
 
-    this.operationTrackingTimer = setInterval(() => this.trackOperation(), config.operation.orderTrackingIntervalInMillis)
+    // this.operationTrackingTimer = setInterval(() => this.trackOperation(), config.operation.orderTrackingIntervalInMillis)
+    this.operationTrackingTimer = -1 as any
     this.priceTrackingTimer = setInterval(() => this.trackAssetPairPrice(), config.operation.priceTrackingIntervalInMillis)
 
     this.dispatchEvent('operationStart', { operation: this })
@@ -74,9 +75,13 @@ export class Operation extends EventedService<ServiceEvents> {
     const startTime = Date.now()
     const assetPair: AssetPair = `${symbol}_USDT`
 
+    /**
+     * 
+     * Create logger
+     * 
+     */
     const logFilename = `${getDateAsDDMMYYYY(startTime)}_${getTimeAsHHMMSS(startTime, '.')}_${symbol}`
     const logger = new Logger(logFilename)
-
 
     logger.log(`Operation start time: ${getDateAsDDMMYYYY(startTime)} ${getTimeAsHHMMSS(startTime)}`)
 
@@ -198,13 +203,13 @@ export class Operation extends EventedService<ServiceEvents> {
      * 
      */
     const buyPrice = this.buyOrder.price
+    const sellAmount = this.effectiveAmount
     const triggerPrice = toFixed(applyPercentage(Number(buyPrice), config.stopLoss.triggerDistancePercent), 2)
     const sellPrice = toFixed(applyPercentage(Number(buyPrice), config.stopLoss.sellDistancePercent), 2)
-    const sellAmount = this.effectiveAmount
 
     this.logger.log('Creating STOP-LOSS order...')
     this.logger.log(' - Sell amount :', Number(sellAmount), this.symbol)
-    this.logger.log(' - Trigger price :', Number(triggerPrice), `USDT (buyPrice - ${Math.abs(config.stopLoss.triggerDistancePercent)}%)`)
+    this.logger.log(' - Trigger condition : <', Number(triggerPrice), `USDT (buyPrice - ${Math.abs(config.stopLoss.triggerDistancePercent)}%)`)
     this.logger.log(' - Sell price :', Number(sellPrice), `USDT (buyPrice - ${Math.abs(config.stopLoss.sellDistancePercent)}%)`)
 
 
@@ -265,11 +270,13 @@ export class Operation extends EventedService<ServiceEvents> {
      * 
      */
     const buyPrice = this.buyOrder.price
-    const sellPrice = toFixed(applyPercentage(Number(buyPrice), config.sell.sellDistancePercent), 2)
     const sellAmount = this.effectiveAmount
+    const triggerPrice = toFixed(applyPercentage(Number(buyPrice), config.sell.triggerDistancePercent), 2)
+    const sellPrice = toFixed(applyPercentage(Number(buyPrice), config.sell.sellDistancePercent), 2)
 
     this.logger.log('Creating SELL order...')
     this.logger.log(' - Sell amount :', Number(sellAmount), this.symbol)
+    this.logger.log(' - Trigger condition : >', Number(triggerPrice), `USDT (buyPrice + ${config.sell.triggerDistancePercent}%)`)
     this.logger.log(' - Sell price :', Number(sellPrice), `USDT (buyPrice + ${config.sell.sellDistancePercent}%)`)
 
     /**
@@ -279,14 +286,31 @@ export class Operation extends EventedService<ServiceEvents> {
      */
     let order: GateOrderDetails
     try {
-      const { response } = await this.gate.spot.createOrder({
-        currencyPair: this.assetPair,
-        side: Order.Side.Sell,
-        amount: sellAmount,
-        price: sellPrice,
-        // we use Good till cancel (GTC), as we want the order to persist until its fulfilled.
-        timeInForce: Order.TimeInForce.Gtc
+      const { response } = await this.gate.spot.createSpotPriceTriggeredOrder({
+        market: this.assetPair,
+        trigger: {
+          price: triggerPrice,
+          rule: SpotPriceTrigger.Rule.GreaterThanOrEqualTo,
+          expiration: TimeInSeconds.ONE_HOUR
+        },
+        put: {
+          type: "limit",
+          side: SpotPricePutOrder.Side.Sell,
+          price: sellPrice,
+          amount: sellAmount,
+          account: SpotPricePutOrder.Account.Normal,
+          timeInForce: SpotPricePutOrder.TimeInForce.Gtc
+        },
       })
+
+      // const { response } = await this.gate.spot.createOrder({
+      //   currencyPair: this.assetPair,
+      //   side: Order.Side.Sell,
+      //   amount: sellAmount,
+      //   price: sellPrice,
+      //   // we use Good till cancel (GTC), as we want the order to persist until its fulfilled.
+      //   timeInForce: Order.TimeInForce.Gtc
+      // })
       order = response.data
     } catch (e) {
       throw new OperationError(

@@ -22,6 +22,7 @@ export interface BotConfig {
         sellDistancePercent: number
     },
     sell: {
+        triggerDistancePercent: number
         sellDistancePercent: number
     }
 }

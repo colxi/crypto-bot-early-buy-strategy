@@ -24,7 +24,8 @@ export const config: BotConfig = {
     sellDistancePercent: -4,
   },
   sell: {
-    sellDistancePercent: 7,
+    triggerDistancePercent: 7,
+    sellDistancePercent: 6,
   }
 }
 
@@ -32,11 +33,12 @@ export const config: BotConfig = {
  * 
  * Operation events visualization :
  * 
- * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ : SELL_PRICE (BUY_PRICE + sell.sellDistancePercent)
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! : SELL_TRIGGER_PRICE (BUY_PRICE + sell.triggerDistancePercent) 
+ * ------------------------------------------ : SELL_EXECUTE_PRICE (BUY_PRICE + sell.sellDistancePercent)
  * 
  * 
  * ++++++++++++++++++++++++++++++++++++++++++ : BUY_PRICE (ASSET_PRICE + buy.buyDistancePercent)
- * .......................................... : ASSET_PRICE (entry point)
+ * .......................................... : ASSET_PRICE (announcement signal)
  * 
  * 
  * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! : STOP_LOSS_TRIGGER_PRICE (BUY_PRICE - stopLoss.triggerDistancePercent) 
