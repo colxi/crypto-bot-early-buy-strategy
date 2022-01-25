@@ -5,7 +5,9 @@
   "types": "dist/index.d.ts",
   "author": "colxi",
   "dependencies": {
+    "@types/lodash": "^4.14.178",
     "gate-api": "^5.22.4",
+    "lodash": "^4.17.21",
     "node-fetch": "^2.6.0",
     "rest-api-service": "^1.0.26",
     "sqlite3": "^5.0.2",
@@ -32,6 +34,7 @@
     "lint": "eslint 'src/**/*.ts'",
     "build": "yarn lint & tsc -p .",
     "build:live": "nodemon --watch 'src/**/*.ts' --exec 'ts-node -r tsconfig-paths/register' src/index.ts",
-    "start:once": "ts-node -r tsconfig-paths/register src/index.ts"
+    "start:once": "ts-node -r tsconfig-paths/register src/index.ts",
+    "start:server": "ts-node ./src/_test-socket/index.ts"
   }
 }
