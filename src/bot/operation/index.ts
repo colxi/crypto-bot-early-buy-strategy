@@ -141,6 +141,8 @@ export class Operation extends EventedService<ServiceEvents> {
     if (operationCost < config.operation.minimumOperationCostUSD) {
       const errorMessage = `Operation cost is lower than allowed by limits`
       logger.error(errorMessage)
+      const newAssetPairPrice = await gate.getAssetPairPrice(assetPair)
+      logger.log(` - New asset price : ${newAssetPairPrice}`)
       throw new OperationError(errorMessage, { code: OperationErrorCode.MINIMUM_OPERATION_COST_LIMIT })
     }
 
@@ -202,10 +204,6 @@ export class Operation extends EventedService<ServiceEvents> {
      * Calculate amounts and sizes
      * 
      */
-
-
-
-
     const buyPrice = this.buyOrder.price
     const amountMinusFees = applyPercentage(Number(this.effectiveAmount), config.gate.feesPercent * -1)
     const currencyPrecision = this.gate.assetPairs[this.assetPair].amountPrecision!

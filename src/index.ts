@@ -77,8 +77,6 @@ async function init(): Promise<void> {
   const socket: WebsocketConnection = await createWebsocket()
   const gate: GateClient = await GateClient.create(config.gate.key, config.gate.secret)
   await EarlyBuyBot.create(socket, gate)
-  // TEST signal! 
-  // bot['createOperation']('BTC')
 }
 
 init().catch(e => {

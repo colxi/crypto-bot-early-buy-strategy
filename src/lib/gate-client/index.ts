@@ -3,7 +3,7 @@ import { TimeInMillis } from '../date'
 import { getAssetPairs } from './helpers/get-assets-pairs'
 import { geAvailableBalanceUSDT } from './helpers/get-balance-usdt'
 import { getLatency } from './helpers/get-latency'
-import { AssetPair, AssetPairsMap, GateClientOptions, GateOrderDetails, GateOrderId } from './types'
+import { AssetPair, AssetPairsMap, GateAssetPairPriceDetails, GateClientOptions, GateOrderDetails, GateOrderId } from './types'
 
 
 export class GateClient {
@@ -43,8 +43,9 @@ export class GateClient {
 
 
   public async getAssetPairPrice(assetPair: AssetPair): Promise<number> {
-    const result = await this.spot.listTickers({ 'currencyPair': assetPair })
-    const assetPrice = Number(result.body[0].last)
+    const { response } = await this.spot.listTickers({ 'currencyPair': assetPair })
+    const assetPairPrice: GateAssetPairPriceDetails = response.data[0]
+    const assetPrice = Number(assetPairPrice.last)
     if (!assetPrice) throw new Error(`Unknown error retrieving "${assetPair}" asset price.`)
     return assetPrice
   }

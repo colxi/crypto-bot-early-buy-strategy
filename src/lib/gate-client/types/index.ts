@@ -10,6 +10,17 @@ export type AssetPairsMap = Record<string, CurrencyPair>
 
 export type GateOrderId = string
 
+export interface GateAssetPairPriceDetails {
+  currency_pair: AssetPair
+  last: string
+  lowest_ask: string
+  highest_bid: string
+  change_percentage: string
+  base_volume: string
+  quote_volume: string
+  high_24h: string
+  low_24h: string
+}
 export interface GateOrderDetails {
   id: GateOrderId,
   text: string
