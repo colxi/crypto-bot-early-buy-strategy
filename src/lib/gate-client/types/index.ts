@@ -51,6 +51,7 @@ export interface GateTriggeredOrderDetails {
   },
   id: GateOrderId
   ctime: number
+  fired_order_id: undefined | GateOrderId
   status: TriggeredOrderStatus
 }
 

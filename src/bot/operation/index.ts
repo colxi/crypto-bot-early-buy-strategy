@@ -494,9 +494,9 @@ export class Operation extends EventedService<ServiceEvents> {
         const triggeredOrder = await this.gate.getTriggeredOrderDetails(orderId)
         // Triggered order executed
         if (triggeredOrder.status === TriggeredOrderStatus.Finish) {
-          console.log('triggeredOrder', triggeredOrder)
-          process.exit()
-          await this.endOperation(OperationEndReason.STOP_LOSS)
+          const stopLossOrderStatus = this.gate.getOrderStatus(triggeredOrder.fired_order_id!, this.assetPair)
+          console.log('stopLossOrderStatus', stopLossOrderStatus)
+          // await this.endOperation(OperationEndReason.STOP_LOSS)
         }
         // Manually cancelled  
         else if (triggeredOrder.status === TriggeredOrderStatus.Cancelled) {
