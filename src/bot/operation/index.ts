@@ -494,7 +494,7 @@ export class Operation extends EventedService<ServiceEvents> {
         const triggeredOrder = await this.gate.getTriggeredOrderDetails(orderId)
         // Triggered order executed
         if (triggeredOrder.status === TriggeredOrderStatus.Finish) {
-          const stopLossOrderStatus = this.gate.getOrderStatus(triggeredOrder.fired_order_id!, this.assetPair)
+          const stopLossOrderStatus = await this.gate.getOrderStatus(triggeredOrder.fired_order_id!, this.assetPair)
           console.log('stopLossOrderStatus', stopLossOrderStatus)
           // await this.endOperation(OperationEndReason.STOP_LOSS)
         }
