@@ -17,7 +17,7 @@ export const config: BotConfig = {
     emergencySellOrderDistancePercent: -1,
   },
   buy: {
-    buyDistancePercent: 0.01,
+    buyDistancePercent: [0.01, 0.02],
   },
   stopLoss: {
     triggerDistancePercent: -2,

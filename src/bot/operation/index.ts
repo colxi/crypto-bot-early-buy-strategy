@@ -65,13 +65,26 @@ export class Operation extends EventedService<ServiceEvents> {
   private sellOrder: GateOrderDetails | null
   private stopLossOrder: GateOrderDetails | null
 
+  public static async create(gate: GateClient, symbol: SymbolName): Promise<Operation> {
+    for (let i = 0; i < config.buy.buyDistancePercent.length; i++) {
+      const buyDistancePercent = config.buy.buyDistancePercent[i]
+      try {
+        const operation: Operation = await this._create(gate, symbol, buyDistancePercent)
+        return operation
+      }
+      catch (e) {
+        if (i === config.buy.buyDistancePercent.length) throw e
+      }
+    }
+    throw new Error('Please set a value for config.buy.buyDistancePercent')
+  }
 
   /**
    * 
    * 
    * 
    */
-  public static async create(gate: GateClient, symbol: SymbolName): Promise<Operation> {
+  public static async _create(gate: GateClient, symbol: SymbolName, buyDistancePercent: number): Promise<Operation> {
     const startTime = Date.now()
     const assetPair: AssetPair = `${symbol}_USDT`
 
@@ -120,7 +133,7 @@ export class Operation extends EventedService<ServiceEvents> {
      */
     const operationBudget = getPercentage(availableUSDTBalance, config.operation.operationUseBalancePercent)
     const currencyPrecision = gate.assetPairs[assetPair].amountPrecision!
-    const buyPrice = toFixed(applyPercentage(assetPairPrice, config.buy.buyDistancePercent), 2)
+    const buyPrice = toFixed(applyPercentage(assetPairPrice, buyDistancePercent), 2)
     const buyAmount = toFixed(operationBudget / Number(buyPrice), currencyPrecision)
     const operationCost = Number(toFixed(Number(buyAmount) * Number(buyPrice), 2))
     const effectiveAmount = toFixed(applyPercentage(Number(buyAmount), config.gate.feesPercent * -1), currencyPrecision)

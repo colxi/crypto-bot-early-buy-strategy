@@ -15,7 +15,7 @@ export interface BotConfig {
         emergencySellOrderDistancePercent: number
     },
     buy: {
-        buyDistancePercent: number
+        buyDistancePercent: number[]
     },
     stopLoss: {
         triggerDistancePercent: number

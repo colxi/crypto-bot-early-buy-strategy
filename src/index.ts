@@ -62,7 +62,7 @@ function validateConfig() {
   if (config.operation.orderTrackingIntervalInMillis < 50) throw new Error('Invalid config.operation.orderTrackingIntervalInMillis. Value must be greater than 50')
   if (config.operation.emergencySellOrderDistancePercent > 0) throw new Error('Invalid config.operation.emergencySellOrderDistancePercent. Value must be a negative number')
   // buy
-  if (config.buy.buyDistancePercent < 0) throw new Error('Invalid config.buy.buyDistancePercent. Value must be a positive percentage')
+  if (config.buy.buyDistancePercent.length === 0) throw new Error('Invalid config.buy.buyDistancePercent. Must contain a value')
   // stopLoss
   if (config.stopLoss.triggerDistancePercent > 0) throw new Error('Invalid config.stopLoss.triggerDistancePercent. Value must be a negative percentage')
   if (config.stopLoss.sellDistancePercent > 0) throw new Error('Invalid config.stopLoss.sellDistancePercent. Value must be a negative percentage')
