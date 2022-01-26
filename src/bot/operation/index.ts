@@ -155,9 +155,9 @@ export class Operation extends EventedService<ServiceEvents> {
     const operationCost = Number(toFixed(Number(buyAmount) * Number(buyPrice), usdtPrecision))
     const effectiveAmount = toFixed(applyPercentage(Number(buyAmount), config.gate.feesPercent * -1), currencyPrecision)
 
-    logger.log(`Current ${symbol} price:`, assetPairPrice, 'USDT')
     logger.log()
     logger.log('Creating BUY order...')
+    logger.log(` - Current ${symbol} price:`, assetPairPrice, 'USDT')
     logger.log(' - Buy amount :', Number(buyAmount), symbol)
     logger.log(' - Buy price :', Number(buyPrice), `USDT (currentPrice + ${config.buy.buyDistancePercent}%)`)
     logger.log(' - Operation cost :', operationCost, `USDT (budget: ${operationBudget} USDT )`)
@@ -236,11 +236,13 @@ export class Operation extends EventedService<ServiceEvents> {
      */
     const buyPrice = this.buyOrder.price
     const amountMinusFees = applyPercentage(Number(this.effectiveAmount), config.gate.feesPercent * -1)
+    const usdtPrecision = this.gate.assetPairs[this.assetPair].precision!
     const currencyPrecision = this.gate.assetPairs[this.assetPair].amountPrecision!
     const sellAmount = toFixed(amountMinusFees, currencyPrecision)
-    const triggerPrice = toFixed(applyPercentage(Number(buyPrice), config.stopLoss.triggerDistancePercent), 2)
-    const sellPrice = toFixed(applyPercentage(Number(buyPrice), config.stopLoss.sellDistancePercent), 2)
+    const triggerPrice = toFixed(applyPercentage(Number(buyPrice), config.stopLoss.triggerDistancePercent), usdtPrecision)
+    const sellPrice = toFixed(applyPercentage(Number(buyPrice), config.stopLoss.sellDistancePercent), usdtPrecision)
 
+    this.logger.log()
     this.logger.log('Creating STOP-LOSS order...')
     this.logger.log(' - Sell amount :', Number(sellAmount), this.symbol)
     this.logger.log(' - Trigger condition : <', Number(triggerPrice), `USDT (buyPrice - ${Math.abs(config.stopLoss.triggerDistancePercent)}%)`)
@@ -308,9 +310,10 @@ export class Operation extends EventedService<ServiceEvents> {
     const amountMinusFees = applyPercentage(Number(this.effectiveAmount), config.gate.feesPercent * -1)
     const currencyPrecision = this.gate.assetPairs[this.assetPair].amountPrecision!
     const sellAmount = toFixed(amountMinusFees, currencyPrecision)
-    const triggerPrice = toFixed(applyPercentage(Number(buyPrice), config.sell.triggerDistancePercent), 2)
-    const sellPrice = toFixed(applyPercentage(Number(buyPrice), config.sell.sellDistancePercent), 2)
+    const triggerPrice = toFixed(applyPercentage(Number(buyPrice), config.sell.triggerDistancePercent), currencyPrecision)
+    const sellPrice = toFixed(applyPercentage(Number(buyPrice), config.sell.sellDistancePercent), currencyPrecision)
 
+    this.logger.log()
     this.logger.log('Creating SELL order...')
     this.logger.log(' - Sell amount :', Number(sellAmount), this.symbol)
     this.logger.log(' - Trigger condition : >', Number(triggerPrice), `USDT (buyPrice + ${config.sell.triggerDistancePercent}%)`)
