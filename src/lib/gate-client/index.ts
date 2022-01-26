@@ -65,6 +65,14 @@ export class GateClient {
     return order.status
   }
 
+  public async getTriggeredOrderDetails(
+    orderId: GateOrderId,
+  ): Promise<any> {
+    const { response } = await this.spot.getSpotPriceTriggeredOrder(orderId)
+    const order: GateOrderDetails = response.data
+    return order
+  }
+
   public async getTriggeredOrderStatus(
     orderId: GateOrderId,
   ): Promise<Order.Status> {

@@ -21,6 +21,10 @@ export interface GateAssetPairPriceDetails {
   high_24h: string
   low_24h: string
 }
+
+export interface GateNewTriggeredOrderDetails {
+  id: GateOrderId
+}
 export interface GateOrderDetails {
   id: GateOrderId,
   text: string

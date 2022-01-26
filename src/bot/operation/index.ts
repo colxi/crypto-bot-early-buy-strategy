@@ -6,6 +6,7 @@ import EventedService from '../../lib/evented-service'
 import { applyPercentage, getPercentage, toFixed } from '../../lib/math'
 import {
   AssetPair,
+  GateNewTriggeredOrderDetails,
   GateOrderDetails,
   SymbolName,
   Timestamp
@@ -62,21 +63,40 @@ export class Operation extends EventedService<ServiceEvents> {
   private readonly operationTrackingTimer: NodeJS.Timeout
   private readonly effectiveAmount: string
   private buyOrder: GateOrderDetails
-  private sellOrder: GateOrderDetails | null
-  private stopLossOrder: GateOrderDetails | null
+  private sellOrder: GateNewTriggeredOrderDetails | null
+  private stopLossOrder: GateNewTriggeredOrderDetails | null
 
   public static async create(gate: GateClient, symbol: SymbolName): Promise<Operation> {
-    for (let i = 0; i < config.buy.buyDistancePercent.length; i++) {
-      const buyDistancePercent = config.buy.buyDistancePercent[i]
+    const startTime = Date.now()
+    const assetPair: AssetPair = `${symbol}_USDT`
+    const logFilename = `${getDateAsDDMMYYYY(startTime)}_${getTimeAsHHMMSS(startTime, '.')}_${symbol}`
+    const logger = new Logger(logFilename)
+
+    logger.log(`Operation start time: ${getDateAsDDMMYYYY(startTime)} ${getTimeAsHHMMSS(startTime)}`)
+
+    const distancePercent = config.buy.buyDistancePercent[0]
+    let count = 0
+    while (true) {
       try {
-        const operation: Operation = await this._create(gate, symbol, buyDistancePercent)
+        const operation: Operation = await this._create(gate, symbol, assetPair, distancePercent, startTime, logger)
         return operation
       }
       catch (e) {
-        if (i === config.buy.buyDistancePercent.length) throw e
+        count++
+        if (count > 20) throw e
       }
     }
-    throw new Error('Please set a value for config.buy.buyDistancePercent')
+    // for (let i = 0; i < config.buy.buyDistancePercent.length; i++) {
+    //   const buyDistancePercent = config.buy.buyDistancePercent[i]
+    //   try {
+    //     const operation: Operation = await this._create(gate, symbol, assetPair, buyDistancePercent, startTime, logger)
+    //     return operation
+    //   }
+    //   catch (e) {
+    //     if (i === config.buy.buyDistancePercent.length - 1) throw e
+    //   }
+    // }
+    // throw new Error('Please set a value for config.buy.buyDistancePercent')
   }
 
   /**
@@ -84,19 +104,15 @@ export class Operation extends EventedService<ServiceEvents> {
    * 
    * 
    */
-  public static async _create(gate: GateClient, symbol: SymbolName, buyDistancePercent: number): Promise<Operation> {
-    const startTime = Date.now()
-    const assetPair: AssetPair = `${symbol}_USDT`
-
-    /**
-     * 
-     * Create logger
-     * 
-     */
-    const logFilename = `${getDateAsDDMMYYYY(startTime)}_${getTimeAsHHMMSS(startTime, '.')}_${symbol}`
-    const logger = new Logger(logFilename)
-
-    logger.log(`Operation start time: ${getDateAsDDMMYYYY(startTime)} ${getTimeAsHHMMSS(startTime)}`)
+  public static async _create(
+    gate: GateClient,
+    symbol: SymbolName,
+    assetPair: AssetPair,
+    buyDistancePercent: number,
+    startTime: number,
+    logger: Logger
+  ): Promise<Operation> {
+    console.log('new attempt!')
 
     /**
      * 
@@ -235,7 +251,7 @@ export class Operation extends EventedService<ServiceEvents> {
      * Create the Stop Loss Order
      * 
      */
-    let order: GateOrderDetails
+    let order: GateNewTriggeredOrderDetails
     try {
       const { response } = await this.gate.spot.createSpotPriceTriggeredOrder({
         market: this.assetPair,
@@ -304,7 +320,7 @@ export class Operation extends EventedService<ServiceEvents> {
      * Create SELL order
      * 
      */
-    let order: GateOrderDetails
+    let order: GateNewTriggeredOrderDetails
     try {
       const { response } = await this.gate.spot.createSpotPriceTriggeredOrder({
         market: this.assetPair,
@@ -446,21 +462,21 @@ export class Operation extends EventedService<ServiceEvents> {
      * Track SELL ORDER
      * 
      */
-    if (this.sellOrder) {
-      const orderId = this.sellOrder.id
-      try {
-        const status = await this.gate.getOrderStatus(orderId, this.assetPair)
-        if (status === Order.Status.Closed) await this.endOperation(OperationEndReason.SELL)
-        if (status === Order.Status.Cancelled) {
-          await this.endOperation(
-            OperationEndReason.ERROR,
-            new OperationError('Sell order Cancelled', { code: OperationErrorCode.SELL_ORDER_CANCELLED })
-          )
-        }
-      } catch (e) {
-        this.logger.error('Error tracking SELL order', orderId, this.gate.getGateResponseError(e))
-      }
-    }
+    // if (this.sellOrder) {
+    //   const orderId = this.sellOrder.id
+    //   try {
+    //     const status = await this.gate.getOrderStatus(orderId, this.assetPair)
+    //     if (status === Order.Status.Closed) await this.endOperation(OperationEndReason.SELL)
+    //     if (status === Order.Status.Cancelled) {
+    //       await this.endOperation(
+    //         OperationEndReason.ERROR,
+    //         new OperationError('Sell order Cancelled', { code: OperationErrorCode.SELL_ORDER_CANCELLED })
+    //       )
+    //     }
+    //   } catch (e) {
+    //     this.logger.error('Error tracking SELL order', orderId, this.gate.getGateResponseError(e))
+    //   }
+    // }
 
     /**
      * 
@@ -470,7 +486,8 @@ export class Operation extends EventedService<ServiceEvents> {
     if (this.stopLossOrder) {
       const orderId = this.stopLossOrder.id
       try {
-        const status = await this.gate.getTriggeredOrderStatus(orderId)
+        const status = await this.gate.getTriggeredOrderDetails(orderId)
+        console.log(status)
         if (status === Order.Status.Closed) await this.endOperation(OperationEndReason.STOP_LOSS)
         if (status === Order.Status.Cancelled) {
           await this.endOperation(
