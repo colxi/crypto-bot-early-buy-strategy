@@ -10,6 +10,13 @@ export type AssetPairsMap = Record<string, CurrencyPair>
 
 export type GateOrderId = string
 
+export enum TriggeredOrderStatus {
+  Open = 'open',
+  Cancelled = 'cancelled', // being manually cancelled  
+  Finish = 'finish', // successfully executed  
+  Failed = 'failed', // failed to execute  
+  Expired = 'expired' //  expired
+}
 export interface GateAssetPairPriceDetails {
   currency_pair: AssetPair
   last: string
@@ -44,7 +51,7 @@ export interface GateTriggeredOrderDetails {
   },
   id: GateOrderId
   ctime: number
-  status: Order.Status
+  status: TriggeredOrderStatus
 }
 
 export interface GateOrderDetails {

@@ -9,7 +9,8 @@ import {
   GateNewTriggeredOrderDetails,
   GateOrderDetails,
   SymbolName,
-  Timestamp
+  Timestamp,
+  TriggeredOrderStatus
 } from '@/lib/gate-client/types'
 import { OperationEndReason, ServiceEvents } from './types'
 import { OperationError } from './error'
@@ -490,13 +491,32 @@ export class Operation extends EventedService<ServiceEvents> {
     if (this.stopLossOrder) {
       const orderId = this.stopLossOrder.id
       try {
-        const { status } = await this.gate.getTriggeredOrderDetails(orderId)
-        console.log('StopLoss status :', status)
-        if (status === Order.Status.Closed) await this.endOperation(OperationEndReason.STOP_LOSS)
-        if (status === Order.Status.Cancelled) {
+        const triggeredOrder = await this.gate.getTriggeredOrderDetails(orderId)
+        // Triggered order executed
+        if (triggeredOrder.status === TriggeredOrderStatus.Finish) {
+          console.log('triggeredOrder', triggeredOrder)
+          process.exit()
+          await this.endOperation(OperationEndReason.STOP_LOSS)
+        }
+        // Manually cancelled  
+        else if (triggeredOrder.status === TriggeredOrderStatus.Cancelled) {
           await this.endOperation(
             OperationEndReason.ERROR,
             new OperationError('Stop Loss order Cancelled', { code: OperationErrorCode.STOP_LOSS_ORDER_CANCELLED })
+          )
+        }
+        // Failed to execute  
+        else if (triggeredOrder.status === TriggeredOrderStatus.Failed) {
+          await this.endOperation(
+            OperationEndReason.ERROR,
+            new OperationError('Stop Loss order Failed', { code: OperationErrorCode.STOP_LOSS_ORDER_FAILED })
+          )
+        }
+        // Order Expired   
+        else if (triggeredOrder.status === TriggeredOrderStatus.Expired) {
+          await this.endOperation(
+            OperationEndReason.ERROR,
+            new OperationError('Stop Loss order Expired', { code: OperationErrorCode.STOP_LOSS_ORDER_EXPIRED })
           )
         }
       } catch (e) {
