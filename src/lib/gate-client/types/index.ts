@@ -25,6 +25,28 @@ export interface GateAssetPairPriceDetails {
 export interface GateNewTriggeredOrderDetails {
   id: GateOrderId
 }
+
+export interface GateTriggeredOrderDetails {
+  market: AssetPair
+  user: number
+  trigger: {
+    price: string
+    rule: '<=' | '>='
+    expiration: number
+  },
+  put: {
+    type: Order.Type
+    side: Order.Side
+    price: string
+    amount: string
+    account: 'normal'
+    time_in_force: Order.TimeInForce
+  },
+  id: GateOrderId
+  ctime: number
+  status: Order.Status
+}
+
 export interface GateOrderDetails {
   id: GateOrderId,
   text: string

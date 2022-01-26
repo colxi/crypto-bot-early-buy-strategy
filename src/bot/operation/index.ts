@@ -490,8 +490,8 @@ export class Operation extends EventedService<ServiceEvents> {
     if (this.stopLossOrder) {
       const orderId = this.stopLossOrder.id
       try {
-        const status = await this.gate.getTriggeredOrderDetails(orderId)
-        console.log(status)
+        const { status } = await this.gate.getTriggeredOrderDetails(orderId)
+        console.log('StopLoss status :', status)
         if (status === Order.Status.Closed) await this.endOperation(OperationEndReason.STOP_LOSS)
         if (status === Order.Status.Cancelled) {
           await this.endOperation(

@@ -3,7 +3,7 @@ import { TimeInMillis } from '../date'
 import { getAssetPairs } from './helpers/get-assets-pairs'
 import { geAvailableBalanceUSDT } from './helpers/get-balance-usdt'
 import { getLatency } from './helpers/get-latency'
-import { AssetPair, AssetPairsMap, GateAssetPairPriceDetails, GateClientOptions, GateOrderDetails, GateOrderId } from './types'
+import { AssetPair, AssetPairsMap, GateAssetPairPriceDetails, GateClientOptions, GateOrderDetails, GateOrderId, GateTriggeredOrderDetails } from './types'
 
 
 export class GateClient {
@@ -67,9 +67,9 @@ export class GateClient {
 
   public async getTriggeredOrderDetails(
     orderId: GateOrderId,
-  ): Promise<any> {
+  ): Promise<GateTriggeredOrderDetails> {
     const { response } = await this.spot.getSpotPriceTriggeredOrder(orderId)
-    const order: GateOrderDetails = response.data
+    const order: GateTriggeredOrderDetails = response.data
     return order
   }
 
