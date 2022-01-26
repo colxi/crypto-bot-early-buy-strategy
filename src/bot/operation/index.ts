@@ -202,8 +202,14 @@ export class Operation extends EventedService<ServiceEvents> {
      * Calculate amounts and sizes
      * 
      */
+
+
+
+
     const buyPrice = this.buyOrder.price
-    const sellAmount = this.effectiveAmount
+    const amountMinusFees = applyPercentage(Number(this.effectiveAmount), config.gate.feesPercent * -1)
+    const currencyPrecision = this.gate.assetPairs[this.assetPair].amountPrecision!
+    const sellAmount = toFixed(amountMinusFees, currencyPrecision)
     const triggerPrice = toFixed(applyPercentage(Number(buyPrice), config.stopLoss.triggerDistancePercent), 2)
     const sellPrice = toFixed(applyPercentage(Number(buyPrice), config.stopLoss.sellDistancePercent), 2)
 
@@ -269,8 +275,11 @@ export class Operation extends EventedService<ServiceEvents> {
      * Calculate amounts and sizes
      * 
      */
+
     const buyPrice = this.buyOrder.price
-    const sellAmount = this.effectiveAmount
+    const amountMinusFees = applyPercentage(Number(this.effectiveAmount), config.gate.feesPercent * -1)
+    const currencyPrecision = this.gate.assetPairs[this.assetPair].amountPrecision!
+    const sellAmount = toFixed(amountMinusFees, currencyPrecision)
     const triggerPrice = toFixed(applyPercentage(Number(buyPrice), config.sell.triggerDistancePercent), 2)
     const sellPrice = toFixed(applyPercentage(Number(buyPrice), config.sell.sellDistancePercent), 2)
 
