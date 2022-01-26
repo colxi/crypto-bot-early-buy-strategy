@@ -45,7 +45,7 @@ export class Operation extends EventedService<ServiceEvents> {
       .then(async () => await this.createStopLossOrder())
       .catch(async (e) => await this.endOperation(OperationEndReason.ERROR, e))
 
-    // this.operationTrackingTimer = setInterval(() => this.trackOperation(), config.operation.orderTrackingIntervalInMillis)
+    this.operationTrackingTimer = setInterval(() => this.trackOperation(), config.operation.orderTrackingIntervalInMillis)
     this.operationTrackingTimer = -1 as any
     this.priceTrackingTimer = setInterval(() => this.trackAssetPairPrice(), config.operation.priceTrackingIntervalInMillis)
 
@@ -149,9 +149,10 @@ export class Operation extends EventedService<ServiceEvents> {
      */
     const operationBudget = getPercentage(availableUSDTBalance, config.operation.operationUseBalancePercent)
     const currencyPrecision = gate.assetPairs[assetPair].amountPrecision!
-    const buyPrice = toFixed(applyPercentage(assetPairPrice, buyDistancePercent), 2)
+    const usdtPrecision = gate.assetPairs[assetPair].precision!
+    const buyPrice = toFixed(applyPercentage(assetPairPrice, buyDistancePercent), usdtPrecision)
     const buyAmount = toFixed(operationBudget / Number(buyPrice), currencyPrecision)
-    const operationCost = Number(toFixed(Number(buyAmount) * Number(buyPrice), 2))
+    const operationCost = Number(toFixed(Number(buyAmount) * Number(buyPrice), usdtPrecision))
     const effectiveAmount = toFixed(applyPercentage(Number(buyAmount), config.gate.feesPercent * -1), currencyPrecision)
 
     logger.log(`Current ${symbol} price:`, assetPairPrice, 'USDT')
