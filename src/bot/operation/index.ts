@@ -139,7 +139,7 @@ export class Operation extends EventedService<ServiceEvents> {
    * ----------------------------------------------------------------------------------------------*/
 
 
-  private async createTriggeredOrders() {
+  private async createTriggeredOrders(): Promise<void> {
     try {
       await this.createTakeProfitTriggeredOrder()
       await this.createStopLossTriggeredOrder()
