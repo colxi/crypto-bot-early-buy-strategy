@@ -42,10 +42,12 @@ export class EarlyBuyBot {
     })
   }
 
+
   gate: GateClient
   socket: WebsocketConnection
   operations: Record<string, Operation> = {}
   isBusy: boolean = false
+
 
   static async create(socket: WebsocketConnection, gate: GateClient): Promise<EarlyBuyBot> {
     console.log('🟢 Initializing Bot')
@@ -54,12 +56,11 @@ export class EarlyBuyBot {
 
 
   private async createOperation(symbol: SymbolName): Promise<void> {
-    if (this.isBusy) {
-      console.log('System busy. Ignoring signal')
-    }
+    console.log(`New asset announced: ${symbol}`)
 
-    this.isBusy = true
-    console.log(`⚡️ New asset announced: ${symbol}`)
+    if (this.isBusy) console.log('Busy creating another operation. Ignoring announcement...')
+    else this.isBusy = true
+
 
     /**
      * 
@@ -68,7 +69,7 @@ export class EarlyBuyBot {
      */
     const assetPair: AssetPair = `${symbol}_USDT`
     if (this.operations[assetPair]) {
-      console.log(`There is another ongoing Operation for ${assetPair}. Ignoring signal`)
+      console.log(`There is another ongoing Operation for ${assetPair}. Ignoring announcement...`)
       return
     }
 
@@ -78,7 +79,7 @@ export class EarlyBuyBot {
      * 
      */
     if (Object.keys(this.operations).length === config.operation.maxSimultaneousOperations) {
-      console.log('Max simultaneous operations limit reached. Ignoring signal')
+      console.log('Max simultaneous operations limit reached. Ignoring announcement...')
       return
     }
 
@@ -92,7 +93,7 @@ export class EarlyBuyBot {
       operation = await Operation.create(this.gate, symbol)
     } catch (e) {
       console.log('🚨 ERROR CREATING OPERATION :', this.gate.getGateResponseError(e))
-      console.log('🚨 Signal ignored')
+      console.log('🚨 Symbol announcement ignored (check logs)')
       return
     }
     this.operations[operation.id] = operation
@@ -101,7 +102,7 @@ export class EarlyBuyBot {
      * 
      * Handle OPERATION end
      */
-    operation.subscribe('operationEnd', (event) => {
+    operation.subscribe('operationFinished', (event) => {
       delete this.operations[event.detail.operation.id]
     })
 

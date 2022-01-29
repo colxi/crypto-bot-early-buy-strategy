@@ -5,7 +5,7 @@ import { isPlainObject } from 'lodash'
 import path from 'path/posix'
 
 
-export class Logger {
+export class OperationLogger {
   constructor(filename: string) {
     this.filename = filename
     const isWindows = process.platform === "win32"
@@ -34,11 +34,11 @@ export class Logger {
   }
 
   public log(...data: unknown[]) {
-    this.save('⚪️', ...data)
+    this.save('⚪', ...data)
   }
 
   public success(...data: unknown[]) {
-    this.save('🟢', ...data)
+    this.save('✅', ...data)
   }
 
   public info(...data: unknown[]) {
