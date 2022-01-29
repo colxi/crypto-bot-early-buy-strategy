@@ -12,7 +12,7 @@ export type GateOrderId = string
 
 export enum TriggeredOrderStatus {
   Open = 'open',
-  Cancelled = 'cancelled', // being manually cancelled  
+  Canceled = 'canceled', // being manually canceled  
   Finish = 'finish', // successfully executed  
   Failed = 'failed', // failed to execute  
   Expired = 'expired' //  expired

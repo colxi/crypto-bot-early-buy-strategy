@@ -24,16 +24,17 @@ export async function createTakeProfitTriggeredOrder(
    */
 
   const amountMinusFees = applyPercentage(Number(amount), config.gate.feesPercent * -1)
+  const usdtPrecision = gate.assetPairs[assetPair].precision!
   const currencyPrecision = gate.assetPairs[assetPair].amountPrecision!
   const sellAmount = toFixed(amountMinusFees, currencyPrecision)
-  const triggerPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.sell.triggerDistancePercent), currencyPrecision)
-  const sellPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.sell.sellDistancePercent), currencyPrecision)
+  const triggerPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.sell.triggerDistancePercent), usdtPrecision)
+  const sellPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.sell.sellDistancePercent), usdtPrecision)
 
   logger.log()
   logger.log('Creating TAKE PROFIT order...')
   logger.log(' - Sell amount :', Number(sellAmount), symbol)
-  logger.log(' - Sell price :', Number(sellPrice), `USDT (buyPrice + ${config.sell.sellDistancePercent}%)`)
   logger.log(' - Trigger condition : >', Number(triggerPrice), `USDT (buyPrice + ${config.sell.triggerDistancePercent}%)`)
+  logger.log(' - Sell price :', Number(sellPrice), `USDT (buyPrice + ${config.sell.sellDistancePercent}%)`)
 
   /**
    * 
@@ -55,7 +56,7 @@ export async function createTakeProfitTriggeredOrder(
         price: sellPrice,
         amount: sellAmount,
         account: SpotPricePutOrder.Account.Normal,
-        timeInForce: SpotPricePutOrder.TimeInForce.Gtc
+        timeInForce: SpotPricePutOrder.TimeInForce.Ioc
       },
     })
     order = response.data

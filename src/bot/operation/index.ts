@@ -60,9 +60,9 @@ export class Operation extends EventedService<ServiceEvents> {
   private priceTrackingTimer: NodeJS.Timeout | undefined
   private operationTrackingTimer: NodeJS.Timeout | undefined
   private buyOrder: GateOrderDetails
-  private emergencySellOrder: GateOrderDetails | null
   private takeProfitTriggeredOrder: GateNewTriggeredOrderDetails | null
   private stopLossTriggeredOrder: GateNewTriggeredOrderDetails | null
+  private emergencySellOrder: GateOrderDetails | null
 
 
   /*------------------------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ export class Operation extends EventedService<ServiceEvents> {
       }
       catch (e) {
         count++
-        if (count > 20) throw e
+        if (count > 100) throw e
       }
     }
   }
@@ -110,9 +110,13 @@ export class Operation extends EventedService<ServiceEvents> {
     // TODO: Close sell and stop loss orders
 
     if (endingReason === OperationEndReason.ERROR) {
+      this.logger.error(`Error details : ${error?.message}`)
+
       this.logger.error(` - Operation ERROR : ${error?.message}`)
-      if (OperationError.isOperationError(error)) this.logger.error(` - Operation ERROR Data:`, error.data)
-      this.logger.info(' - Creating EMERGENCY SELL order...')
+      if (OperationError.isOperationError(error)) {
+        this.logger.error(` - Operation ERROR Data:`, JSON.stringify(error.data))
+      }
+      this.logger.info(' - Will create EMERGENCY SELL order...')
       try {
         await this.createEmergencySellOrder()
         const isEmergencySellOrderComplete = this.emergencySellOrder?.status === Order.Status.Closed
@@ -210,6 +214,7 @@ export class Operation extends EventedService<ServiceEvents> {
 
 
   private stopOperationTracking() {
+    this.logger.warning('Stopping Operation tracking', this.priceTrackingTimer, this.operationTrackingTimer)
     clearInterval(this.priceTrackingTimer!)
     clearInterval(this.operationTrackingTimer!)
   }

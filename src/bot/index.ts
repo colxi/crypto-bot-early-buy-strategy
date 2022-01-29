@@ -9,8 +9,10 @@ import { Operation } from './operation'
 const AllowedSignals = [
   "Binance Will List",
   "자산 추가",
-  "Coinbase Pro available"
+  "Coinbase Pro available",
+  "Launching on Coinbase Pro"
 ]
+
 export class EarlyBuyBot {
   constructor(gate: GateClient, socket: WebsocketConnection) {
     this.gate = gate

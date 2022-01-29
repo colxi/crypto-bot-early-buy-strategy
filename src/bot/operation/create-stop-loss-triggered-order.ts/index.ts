@@ -22,6 +22,7 @@ export async function createStopLossTriggeredOrder(
    * Calculate amounts and sizes
    * 
    */
+
   const amountMinusFees = applyPercentage(Number(amountToSell), config.gate.feesPercent * -1)
   const usdtPrecision = gate.assetPairs[assetPair].precision!
   const currencyPrecision = gate.assetPairs[assetPair].amountPrecision!
@@ -32,8 +33,8 @@ export async function createStopLossTriggeredOrder(
   logger.log()
   logger.log('Creating TRIGGERED STOP-LOSS order...')
   logger.log(' - Sell amount :', Number(sellAmount), symbol)
-  logger.log(' - Sell price :', Number(sellPrice), `USDT (buyPrice - ${Math.abs(config.stopLoss.sellDistancePercent)}%)`)
   logger.log(' - Trigger condition : <', Number(triggerPrice), `USDT (buyPrice - ${Math.abs(config.stopLoss.triggerDistancePercent)}%)`)
+  logger.log(' - Sell price :', Number(sellPrice), `USDT (buyPrice - ${Math.abs(config.stopLoss.sellDistancePercent)}%)`)
 
 
   /**
@@ -56,8 +57,7 @@ export async function createStopLossTriggeredOrder(
         price: sellPrice,
         amount: sellAmount,
         account: SpotPricePutOrder.Account.Normal,
-        // We trigger the order as Gtc as we want it to persist until it's fulfilled
-        timeInForce: SpotPricePutOrder.TimeInForce.Gtc
+        timeInForce: SpotPricePutOrder.TimeInForce.Ioc
       },
     })
     order = response.data

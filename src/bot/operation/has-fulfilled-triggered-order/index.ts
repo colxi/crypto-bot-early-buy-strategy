@@ -6,10 +6,8 @@ import { OperationErrorCode } from '../operation-error/types'
 import { OperationLogger } from '../operation-logger'
 import { OperationTriggeredOrderType } from '../types'
 
-
 export const TriggeredOrderErrorStatusList = [
-  TriggeredOrderStatus.Finish,
-  TriggeredOrderStatus.Cancelled,
+  TriggeredOrderStatus.Canceled,
   TriggeredOrderStatus.Failed,
   TriggeredOrderStatus.Expired
 ]
@@ -31,6 +29,7 @@ export async function hasFulfilledTriggeredOrder(
     const triggeredOrder = await gate.getTriggeredOrderDetails(triggeredOrderId)
     const triggeredOrderStatus = triggeredOrder.status
     const isErrorStatus = TriggeredOrderErrorStatusList.includes(triggeredOrder.status)
+
     // If TRIGGERED order has error status....
     if (isErrorStatus) {
       throw new OperationError(`${orderTpe} TRIGGERED order has Error status: ${triggeredOrderStatus}`, {
@@ -58,7 +57,8 @@ export async function hasFulfilledTriggeredOrder(
       else if (limitOrderStatus === Order.Status.Closed) return true
     }
   } catch (e) {
-    logger.error('Error tracking order (TRIGGERED or LIMIT)', gate.getGateResponseError(e))
+    logger.error('Error tracking order', gate.getGateResponseError(e))
+    throw e
   }
   return false
 }
