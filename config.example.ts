@@ -1,4 +1,4 @@
-import { BotConfig } from './types'
+import { BotConfig } from '@/config/types'
 
 export const config: BotConfig = {
   socketAddr: 'ws://ADDRESS:IP',
