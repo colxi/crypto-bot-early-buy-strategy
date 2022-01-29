@@ -1,3 +1,8 @@
+# Config
+early-buy-bot.code-workspace
+config.ts
+
+
 # Logs
 operation-logs/*
 logs
@@ -103,5 +108,3 @@ dist
 
 # TernJS port file
 .tern-port
-src/config/index.ts
-early-buy-bot.code-workspace
