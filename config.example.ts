@@ -3,11 +3,19 @@ import { BotConfig } from '@/config/types'
 export const config: BotConfig = {
   socketAddr: 'ws://ADDRESS:IP',
   logsPath: 'operation-logs',
+  cleanLogsPathOnStart: false,
   gate: {
     key: "GATE_KEY",
     secret: "GATE_SECRET",
     feesPercent: 0.2,
   },
+  email: {
+    host: 'smtp.HOST.email',
+    port: 587,
+    user: 'USER',
+    pass: 'PASSWORD'
+  },
+  emailRecipient: 'admin@my.domain.com',
   operation: {
     minimumOperationCostUSD: 20,
     operationUseBalancePercent: 100,
@@ -17,16 +25,17 @@ export const config: BotConfig = {
     emergencySellOrderDistancePercent: -1,
   },
   buy: {
-    buyDistancePercent: [0.01, 0.02],
+    buyDistancePercent: 0.01,
+    retryLimitInMillis: 1000,
+  },
+  takeProfit: {
+    triggerDistancePercent: 7,
+    sellDistancePercent: 6,
   },
   stopLoss: {
     triggerDistancePercent: -2,
     sellDistancePercent: -4,
   },
-  sell: {
-    triggerDistancePercent: 7,
-    sellDistancePercent: 6,
-  }
 }
 
 /**

@@ -53,7 +53,7 @@ export async function createBuyOrder(
   const operationBudget = getPercentage(availableUSDTBalance, config.operation.operationUseBalancePercent)
   const currencyPrecision = gate.assetPairs[assetPair].amountPrecision!
   const usdtPrecision = gate.assetPairs[assetPair].precision!
-  const buyPrice = toFixed(applyPercentage(assetPairPrice, config.buy.buyDistancePercent[0]), usdtPrecision)
+  const buyPrice = toFixed(applyPercentage(assetPairPrice, config.buy.buyDistancePercent), usdtPrecision)
   const buyAmount = toFixed(operationBudget / Number(buyPrice), currencyPrecision)
   const operationCost = Number(toFixed(Number(buyAmount) * Number(buyPrice), usdtPrecision))
   const effectiveAmount = toFixed(applyPercentage(Number(buyAmount), config.gate.feesPercent * -1), currencyPrecision)

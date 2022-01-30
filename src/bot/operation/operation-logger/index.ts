@@ -1,19 +1,14 @@
 import { config } from '@/config'
+import { createPath } from '@/lib/create-path'
 import { getDateAsDDMMYYYY, getTimeAsHHMMSS } from '@/lib/date'
 import fs from 'fs'
 import { isPlainObject } from 'lodash'
-import path from 'path/posix'
 
 
 export class OperationLogger {
   constructor(filename: string) {
     this.filename = filename
-    const isWindows = process.platform === "win32"
-    if (isWindows) {
-      this.filepath = `${process.cwd()}\\${config.logsPath}\\${this.filename}.txt`
-    } else {
-      this.filepath = path.join(process.cwd(), config.logsPath, `${this.filename}.txt`)
-    }
+    this.filepath = createPath(__dirname, config.logsPath, `${this.filename}.txt`)
   }
 
   private readonly filename: string

@@ -1,5 +1,5 @@
 import { config } from '@/config'
-import { Order } from 'gate-api'
+import { Order, SpotPricePutOrder } from 'gate-api'
 import { GateClient } from '../../lib/gate-client'
 import { getDateAsDDMMYYYY, getTimeAsHHMMSS } from '../../lib/date'
 import EventedService from '../../lib/evented-service'
@@ -18,6 +18,7 @@ import { createTakeProfitTriggeredOrder } from './create-take-profit-triggered-o
 import { createStopLossTriggeredOrder } from './create-stop-loss-triggered-order.ts'
 import { createEmergencySellOrder } from './create-emergency-sell-order'
 import { hasFulfilledTriggeredOrder } from './has-fulfilled-triggered-order'
+import { sendEmail } from '../send-email'
 
 let lastOperationId: number = 0
 
@@ -83,15 +84,14 @@ export class Operation extends EventedService<ServiceEvents> {
     logger.log(`New operation : ${assetPair}`)
     logger.log(`Operation start time: ${getDateAsDDMMYYYY(startTime)} ${getTimeAsHHMMSS(startTime)}`)
 
-    let count = 0
     while (true) {
       try {
         const { order, amount } = await createBuyOrder(gate, symbol, assetPair, startTime, logger)
         return new Operation(gate, symbol, order, amount, startTime, logger)
       }
       catch (e) {
-        count++
-        if (count > 100) throw e
+        const elapsed = Date.now() - startTime
+        if (elapsed > config.buy.retryLimitInMillis) throw e
       }
     }
   }
@@ -105,9 +105,8 @@ export class Operation extends EventedService<ServiceEvents> {
     this.logger.info()
     this.logger.info(`Finishing Operation due to ${endingReason}...`)
 
-    this.stopOperationTracking()
-
-    // TODO: Close sell and stop loss orders
+    await this.stopOperationTracking()
+    await this.cancelOperationOrders()
 
     if (endingReason === OperationEndReason.ERROR) {
       this.logger.error(`Error details : ${error?.message}`)
@@ -124,7 +123,7 @@ export class Operation extends EventedService<ServiceEvents> {
         else throw new Error()
       } catch (e) {
         this.logger.error(' - Failed creating EMERGENCY SELL order! Manual handling required!')
-        // TODO: Send notification to user
+        sendEmail(' - Failed creating EMERGENCY SELL order! Manual handling required!')
       }
 
       this.logger.info()
@@ -191,6 +190,24 @@ export class Operation extends EventedService<ServiceEvents> {
     )
   }
 
+  private async cancelOperationOrders(): Promise<void> {
+    //  Purge TAKE PROFIT order
+    try {
+      this.gate.purgeTriggeredOrder(this.takeProfitTriggeredOrder!.id, this.assetPair)
+    } catch (e) {
+      const status = (e as any)?.response?.status
+      if (status !== 400) this.logger.error('Error purging TAKE PROFIT TRIGGERED order')
+    }
+
+    //  Purge STOP LOSS order
+    try {
+      this.gate.purgeTriggeredOrder(this.stopLossTriggeredOrder!.id, this.assetPair)
+    } catch (e) {
+      const status = (e as any)?.response?.status
+      if (status !== 400) this.logger.error('Error purging STOP LOSS TRIGGERED order')
+    }
+  }
+
 
   /*------------------------------------------------------------------------------------------------
   * 
@@ -213,7 +230,7 @@ export class Operation extends EventedService<ServiceEvents> {
   }
 
 
-  private stopOperationTracking() {
+  private async stopOperationTracking() {
     this.logger.warning('Stopping Operation tracking', this.priceTrackingTimer, this.operationTrackingTimer)
     clearInterval(this.priceTrackingTimer!)
     clearInterval(this.operationTrackingTimer!)

@@ -27,14 +27,14 @@ export async function createTakeProfitTriggeredOrder(
   const usdtPrecision = gate.assetPairs[assetPair].precision!
   const currencyPrecision = gate.assetPairs[assetPair].amountPrecision!
   const sellAmount = toFixed(amountMinusFees, currencyPrecision)
-  const triggerPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.sell.triggerDistancePercent), usdtPrecision)
-  const sellPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.sell.sellDistancePercent), usdtPrecision)
+  const triggerPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.takeProfit.triggerDistancePercent), usdtPrecision)
+  const sellPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.takeProfit.sellDistancePercent), usdtPrecision)
 
   logger.log()
   logger.log('Creating TAKE PROFIT order...')
   logger.log(' - Sell amount :', Number(sellAmount), symbol)
-  logger.log(' - Trigger condition : >', Number(triggerPrice), `USDT (buyPrice + ${config.sell.triggerDistancePercent}%)`)
-  logger.log(' - Sell price :', Number(sellPrice), `USDT (buyPrice + ${config.sell.sellDistancePercent}%)`)
+  logger.log(' - Trigger condition : >', Number(triggerPrice), `USDT (buyPrice + ${config.takeProfit.triggerDistancePercent}%)`)
+  logger.log(' - Sell price :', Number(sellPrice), `USDT (buyPrice + ${config.takeProfit.sellDistancePercent}%)`)
 
   /**
    * 

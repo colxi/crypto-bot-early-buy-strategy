@@ -4,6 +4,8 @@ import { config } from './config'
 import { EarlyBuyBot } from './bot'
 import { handleSignalInterrupt } from './lib/sigint'
 import { validateConfig } from './config/validate-config'
+import fs from 'fs'
+import { createPath } from './lib/create-path'
 
 console.clear()
 
@@ -45,17 +47,46 @@ function createWebsocket(): Promise<WebsocketConnection> {
 
 }
 
+function initializeLogsDirectory() {
+  const logsAbsPath = createPath(__dirname, config.logsPath)
+  console.log('Initializing LOGS directory...', logsAbsPath)
 
-async function init(): Promise<void> {
-  handleSignalInterrupt()
-  validateConfig()
-  const socket: WebsocketConnection = await createWebsocket()
-  const gate: GateClient = await GateClient.create(config.gate.key, config.gate.secret)
-  await EarlyBuyBot.create(socket, gate)
+  // create directory if doe snot exist
+  if (!fs.existsSync(logsAbsPath)) {
+    try { fs.mkdirSync(logsAbsPath) }
+    catch (e) { /** DO NOTHING */ }
+  }
+  if (!fs.existsSync(logsAbsPath)) {
+    throw new Error(`Cannot create LOGS directory`)
+  }
+
+  // empty directory 
+  if (config.cleanLogsPathOnStart) {
+    console.log('Cleaning LOGS directory...')
+    fs.readdir(logsAbsPath, (err, files) => {
+      if (err) throw err
+      for (const file of files) {
+        fs.unlink(createPath(logsAbsPath, file), err => {
+          if (err) throw err
+        })
+      }
+    })
+  }
 }
 
-init().catch(e => {
-  console.log('Error initializing BOT!')
-  throw e
-})
+async function init(): Promise<void> {
 
+  try {
+    handleSignalInterrupt()
+    validateConfig()
+    initializeLogsDirectory()
+    const socket: WebsocketConnection = await createWebsocket()
+    const gate: GateClient = await GateClient.create(config.gate.key, config.gate.secret)
+    await gate.spot.cancelSpotPriceTriggeredOrder('1234')
+    await EarlyBuyBot.create(socket, gate)
+  } catch (e) {
+    console.log('Error during initialization', (e as any)?.message)
+  }
+}
+
+init()

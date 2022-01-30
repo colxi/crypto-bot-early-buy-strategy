@@ -73,6 +73,13 @@ export class GateClient {
     return order
   }
 
+  public async purgeTriggeredOrder(triggeredOrderId: string, assetPair: AssetPair) {
+    const { fired_order_id: limitOrderId } = await this.getTriggeredOrderDetails(triggeredOrderId)
+
+    await this.spot.cancelSpotPriceTriggeredOrder(triggeredOrderId)
+    if (limitOrderId) await this.spot.cancelOrder(limitOrderId, assetPair, { account: 'normal' })
+  }
+
   public async getTriggeredOrderStatus(
     orderId: GateOrderId,
   ): Promise<Order.Status> {
