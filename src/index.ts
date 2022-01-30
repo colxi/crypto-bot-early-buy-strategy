@@ -82,7 +82,6 @@ async function init(): Promise<void> {
     initializeLogsDirectory()
     const socket: WebsocketConnection = await createWebsocket()
     const gate: GateClient = await GateClient.create(config.gate.key, config.gate.secret)
-    await gate.spot.cancelSpotPriceTriggeredOrder('1234')
     await EarlyBuyBot.create(socket, gate)
   } catch (e) {
     console.log('Error during initialization', (e as any)?.message)
