@@ -52,12 +52,12 @@ export class Operation extends EventedService<ServiceEvents> {
 
 
   public readonly id: number
+  public readonly assetPair: AssetPair
+  public readonly symbol: SymbolName
+  public readonly amount: string
+  public readonly startTime: Timestamp
   private readonly logger: OperationLogger
   private readonly gate: GateClient
-  private readonly symbol: SymbolName
-  private readonly assetPair: AssetPair
-  private readonly startTime: Timestamp
-  private readonly amount: string
   private priceTrackingTimer: NodeJS.Timeout | undefined
   private operationTrackingTimer: NodeJS.Timeout | undefined
   private buyOrder: GateOrderDetails
@@ -97,41 +97,47 @@ export class Operation extends EventedService<ServiceEvents> {
   }
 
 
-  public async finish<END_REASON>(
+  public async finish<END_REASON extends OperationEndReason>(
     ...[endingReason, error]: END_REASON extends OperationEndReason.ERROR
       ? [END_REASON, Error]
       : [END_REASON]
   ): Promise<void> {
-    this.logger.info()
-    this.logger.info(`Finishing Operation due to ${endingReason}...`)
+    this.logger.lineBreak()
+    this.logger.log(`Finishing Operation due to ${endingReason}...`)
 
     await this.stopOperationTracking()
-    await this.cancelOperationOrders()
+    await this.cancelRemainingOperationOrders()
 
-    if (endingReason === OperationEndReason.ERROR) {
-      this.logger.error(`Error details : ${error?.message}`)
+    if (endingReason === OperationEndReason.ERROR) await this.handleOperationError(error)
 
-      this.logger.error(` - Operation ERROR : ${error?.message}`)
-      if (OperationError.isOperationError(error)) {
-        this.logger.error(` - Operation ERROR Data:`, JSON.stringify(error.data))
-      }
-      this.logger.info(' - Will create EMERGENCY SELL order...')
-      try {
-        await this.createEmergencySellOrder()
-        const isEmergencySellOrderComplete = this.emergencySellOrder?.status === Order.Status.Closed
-        if (isEmergencySellOrderComplete) this.logger.success(' - EMERGENCY SELL order executed...')
-        else throw new Error()
-      } catch (e) {
-        this.logger.error(' - Failed creating EMERGENCY SELL order! Manual handling required!')
-        sendEmail(' - Failed creating EMERGENCY SELL order! Manual handling required!')
-      }
-
-      this.logger.info()
-      this.logger.info('- Operation finished')
-      this.dispatchEvent('operationFinished', { operation: this, reason: endingReason })
-    }
+    this.logger.lineBreak()
+    this.logger.log('- Operation finished')
+    this.dispatchEvent('operationFinished', { operation: this, reason: endingReason })
   }
 
+  async handleOperationError(e: unknown) {
+    const error: Error = e instanceof Error ? e : new Error(String(e))
+    const isKnownError = OperationError.isOperationError(error)
+
+    this.logger.lineBreak()
+    this.logger.error(`Handling Operation error...`)
+    this.logger.error(` - Operation ERROR : ${error?.message}`)
+    if (isKnownError) this.logger.error(` - Operation ERROR Data:`, JSON.stringify(error.data))
+    await sendEmail('EMERGENCY SELL order required.')
+    let attemptCounter = 0
+    while (true) {
+      this.logger.error(` - EMERGENCY SELL order (Attempt ${attemptCounter})...`)
+      try {
+        await this.createEmergencySellOrder()
+        if (this.emergencySellOrder?.status === Order.Status.Closed) break
+        else this.logger.error(' - EMERGENCY SELL order not executed!')
+      } catch (e) {
+        this.logger.error(' - EMERGENCY SELL order creation failed!')
+      }
+      attemptCounter++
+    }
+    this.logger.success(' - EMERGENCY SELL order executed...')
+  }
 
   /*------------------------------------------------------------------------------------------------
    * 
@@ -190,7 +196,7 @@ export class Operation extends EventedService<ServiceEvents> {
     )
   }
 
-  private async cancelOperationOrders(): Promise<void> {
+  private async cancelRemainingOperationOrders(): Promise<void> {
     //  Purge TAKE PROFIT order
     try {
       this.gate.purgeTriggeredOrder(this.takeProfitTriggeredOrder!.id, this.assetPair)
@@ -231,7 +237,7 @@ export class Operation extends EventedService<ServiceEvents> {
 
 
   private async stopOperationTracking() {
-    this.logger.warning('Stopping Operation tracking', this.priceTrackingTimer, this.operationTrackingTimer)
+    this.logger.warning('Stopping Operation tracking')
     clearInterval(this.priceTrackingTimer!)
     clearInterval(this.operationTrackingTimer!)
   }

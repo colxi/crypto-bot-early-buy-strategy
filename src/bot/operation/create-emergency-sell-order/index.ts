@@ -17,7 +17,7 @@ export async function createEmergencySellOrder(
   amountToSell: string,
   logger: OperationLogger
 ): Promise<GateOrderDetails> {
-  logger.log()
+  logger.lineBreak()
   logger.log('Creating EMERGENCY SELL order...')
 
   /**
@@ -40,7 +40,8 @@ export async function createEmergencySellOrder(
    * Calculate amounts and sizes
    * 
    */
-  const sellPrice = toFixed(applyPercentage(assetPairPrice, config.operation.emergencySellOrderDistancePercent), 2)
+  const usdtPrecision = gate.assetPairs[assetPair].precision!
+  const sellPrice = toFixed(applyPercentage(assetPairPrice, config.operation.emergencySellOrderDistancePercent), usdtPrecision)
 
   logger.log(` - Current ${symbol} price:`, assetPairPrice, 'USDT')
   logger.log(' - Sell amount :', Number(amountToSell), symbol)

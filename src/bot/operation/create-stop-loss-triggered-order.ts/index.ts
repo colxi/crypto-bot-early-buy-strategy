@@ -30,7 +30,7 @@ export async function createStopLossTriggeredOrder(
   const triggerPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.stopLoss.triggerDistancePercent), usdtPrecision)
   const sellPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.stopLoss.sellDistancePercent), usdtPrecision)
 
-  logger.log()
+  logger.lineBreak()
   logger.log('Creating TRIGGERED STOP-LOSS order...')
   logger.log(' - Sell amount :', Number(sellAmount), symbol)
   logger.log(' - Trigger condition : <', Number(triggerPrice), `USDT (buyPrice - ${Math.abs(config.stopLoss.triggerDistancePercent)}%)`)

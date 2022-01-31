@@ -6,6 +6,7 @@ import { handleSignalInterrupt } from './lib/sigint'
 import { validateConfig } from './config/validate-config'
 import fs from 'fs'
 import { createPath } from './lib/create-path'
+import { getProjectRootDir } from './lib/path'
 
 console.clear()
 
@@ -48,7 +49,7 @@ function createWebsocket(): Promise<WebsocketConnection> {
 }
 
 function initializeLogsDirectory() {
-  const logsAbsPath = createPath(__dirname, config.logsPath)
+  const logsAbsPath = createPath(getProjectRootDir(), config.logsPath)
   console.log('Initializing LOGS directory...', logsAbsPath)
 
   // create directory if doe snot exist

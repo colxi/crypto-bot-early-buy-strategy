@@ -58,7 +58,7 @@ export async function createBuyOrder(
   const operationCost = Number(toFixed(Number(buyAmount) * Number(buyPrice), usdtPrecision))
   const effectiveAmount = toFixed(applyPercentage(Number(buyAmount), config.gate.feesPercent * -1), currencyPrecision)
 
-  logger.log()
+  logger.lineBreak()
   logger.log('Creating BUY order...')
   logger.log(` - Current ${symbol} price:`, assetPairPrice, 'USDT')
   logger.log(' - Buy amount :', Number(buyAmount), symbol)

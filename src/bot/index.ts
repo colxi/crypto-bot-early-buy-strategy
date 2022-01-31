@@ -4,6 +4,7 @@ import { AssetPair, SymbolName } from '../lib/gate-client/types'
 import WebsocketConnection from '../lib/websocket'
 import { getSymbolsFromMessage } from './message-process'
 import { Operation } from './operation'
+import { CLI } from './cli'
 
 
 const AllowedSignals = [
@@ -20,6 +21,8 @@ export class EarlyBuyBot {
     console.log('Listening for new assets announcements...')
     console.log
     console.log('')
+
+    const cli = new CLI(this)
 
     this.socket.subscribe('message', (event) => {
       const { message } = event.detail
@@ -57,7 +60,7 @@ export class EarlyBuyBot {
   }
 
 
-  private async createOperation(symbol: SymbolName): Promise<void> {
+  public async createOperation(symbol: SymbolName): Promise<void> {
     console.log(`New asset announced: ${symbol}`)
 
     if (this.isBusy) console.log('Busy creating another operation. Ignoring announcement...')
@@ -115,5 +118,6 @@ export class EarlyBuyBot {
      */
     this.isBusy = false
   }
+
 }
 

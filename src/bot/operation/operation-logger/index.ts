@@ -1,6 +1,7 @@
 import { config } from '@/config'
 import { createPath } from '@/lib/create-path'
 import { getDateAsDDMMYYYY, getTimeAsHHMMSS } from '@/lib/date'
+import { getProjectRootDir } from '@/lib/path'
 import fs from 'fs'
 import { isPlainObject } from 'lodash'
 
@@ -8,12 +9,13 @@ import { isPlainObject } from 'lodash'
 export class OperationLogger {
   constructor(filename: string) {
     this.filename = filename
-    this.filepath = createPath(__dirname, config.logsPath, `${this.filename}.txt`)
+    this.filepath = createPath(getProjectRootDir(), config.logsPath, `${this.filename}.txt`)
+    this.lineBreakChar = '\n'
   }
 
   private readonly filename: string
   private readonly filepath: string
-  private readonly lineBreak = '\n'
+  private readonly lineBreakChar: string
 
   private save(...data: unknown[]) {
     const time = `${getDateAsDDMMYYYY()} ${getTimeAsHHMMSS()}`
@@ -21,11 +23,13 @@ export class OperationLogger {
       .map(i => isPlainObject(i) ? JSON.stringify(i, null, 2) : Array.isArray(i) ? JSON.stringify(i) : String(i))
       .join(' ')
 
-    try {
-      fs.appendFileSync(this.filepath, `${time} : ${formatted}${this.lineBreak}`)
-    } catch (e) {
-      console.log('err writing', e)
-    }
+    try { fs.appendFileSync(this.filepath, `${time} : ${formatted}${this.lineBreakChar}`) }
+    catch (e) { console.log('Err writing log', e) }
+  }
+
+  public lineBreak() {
+    try { fs.appendFileSync(this.filepath, this.lineBreakChar) }
+    catch (e) { console.log('Error writing log', e) }
   }
 
   public log(...data: unknown[]) {

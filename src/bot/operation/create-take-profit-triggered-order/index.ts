@@ -30,7 +30,7 @@ export async function createTakeProfitTriggeredOrder(
   const triggerPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.takeProfit.triggerDistancePercent), usdtPrecision)
   const sellPrice = toFixed(applyPercentage(Number(operationEntryPrice), config.takeProfit.sellDistancePercent), usdtPrecision)
 
-  logger.log()
+  logger.lineBreak()
   logger.log('Creating TAKE PROFIT order...')
   logger.log(' - Sell amount :', Number(sellAmount), symbol)
   logger.log(' - Trigger condition : >', Number(triggerPrice), `USDT (buyPrice + ${config.takeProfit.triggerDistancePercent}%)`)
