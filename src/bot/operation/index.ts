@@ -22,6 +22,10 @@ import { sendEmail } from '../send-email'
 
 let lastOperationId: number = 0
 
+enum OperationStatus {
+  ACTIVE,
+  FINISHED
+}
 export class Operation extends EventedService<ServiceEvents> {
   private constructor(
     gate: GateClient,
@@ -44,10 +48,12 @@ export class Operation extends EventedService<ServiceEvents> {
     this.emergencySellOrder = null
     this.takeProfitTriggeredOrder = null
     this.stopLossTriggeredOrder = null
+    this.operationStatus = OperationStatus.ACTIVE
 
     this.createTriggeredOrders()
     this.startOperationTracking()
     this.dispatchEvent('operationStarted', { operation: this })
+
   }
 
 
@@ -64,6 +70,7 @@ export class Operation extends EventedService<ServiceEvents> {
   private takeProfitTriggeredOrder: GateNewTriggeredOrderDetails | null
   private stopLossTriggeredOrder: GateNewTriggeredOrderDetails | null
   private emergencySellOrder: GateOrderDetails | null
+  private operationStatus: OperationStatus
 
 
   /*------------------------------------------------------------------------------------------------
@@ -102,6 +109,8 @@ export class Operation extends EventedService<ServiceEvents> {
       ? [END_REASON, Error]
       : [END_REASON]
   ): Promise<void> {
+    this.operationStatus = OperationStatus.FINISHED
+
     this.logger.lineBreak()
     this.logger.log(`Finishing Operation due to ${endingReason}...`)
 
@@ -244,6 +253,8 @@ export class Operation extends EventedService<ServiceEvents> {
 
 
   private async trackAssetPairPrice(): Promise<void> {
+    if (this.operationStatus === OperationStatus.FINISHED) return
+
     // Track only when all orders have been placed
     if (!this.takeProfitTriggeredOrder || !this.stopLossTriggeredOrder) return
     try {
@@ -256,6 +267,8 @@ export class Operation extends EventedService<ServiceEvents> {
 
 
   private async trackOperationOrders(): Promise<void> {
+    if (this.operationStatus === OperationStatus.FINISHED) return
+
     // Track only when all orders have been placed
     if (!this.takeProfitTriggeredOrder || !this.stopLossTriggeredOrder) return
 

@@ -39,29 +39,29 @@ export class CLI {
   bot: EarlyBuyBot
 
   private prompt() {
-    this.promptInterface.question('> ', (message) => {
-      this.interpreter(message)
+    this.promptInterface.question('> ', async (message) => {
+      await this.interpreter(message)
       this.prompt()
     })
   }
 
-  private interpreter(input: string) {
+  private async interpreter(input: string) {
     const [command, ...params] = input.split(' ')
     const parameters = params.join(' ')
 
     const handlers: Record<Command, any> = {
-      q: () => { this.commandQuit(parameters) },
-      h: () => { this.commandHelp(parameters) },
-      cls: () => { this.commandCls(parameters) },
-      ol: () => { this.commandOperationList(parameters) },
-      oi: () => { this.commandOperationInfo(parameters) },
-      ok: () => { this.commandOperationKill(parameters) },
-      oc: () => { this.commandOperationCreate(parameters) },
-      gab: () => { this.commandGateAvailableBalance(parameters) },
-      lr: () => { this.commandLogsRemove(parameters) },
+      q: async () => { await this.commandQuit(parameters) },
+      h: async () => { await this.commandHelp(parameters) },
+      cls: async () => { await this.commandCls(parameters) },
+      ol: async () => { await this.commandOperationList(parameters) },
+      oi: async () => { await this.commandOperationInfo(parameters) },
+      ok: async () => { await this.commandOperationKill(parameters) },
+      oc: async () => { await this.commandOperationCreate(parameters) },
+      gab: async () => { await this.commandGateAvailableBalance(parameters) },
+      lr: async () => { await this.commandLogsRemove(parameters) },
     }
 
-    if (isValidCommand(command)) handlers[command](parameters)
+    if (isValidCommand(command)) await handlers[command](parameters)
     else console.log('unknown command', command)
   }
 
@@ -152,7 +152,8 @@ export class CLI {
   async commandLogsRemove(params: string) {
     console.log('Removing all logs...')
     const logsAbsPath = createPath(getProjectRootDir(), config.logsPath)
-    if (config.cleanLogsPathOnStart) clearDir(logsAbsPath)
+    clearDir(logsAbsPath)
+    console.log('Done!')
   }
 
 }

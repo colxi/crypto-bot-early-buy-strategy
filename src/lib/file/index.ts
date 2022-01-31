@@ -11,7 +11,6 @@ export function createPath(...parts: string[]): string {
 }
 
 export function clearDir(path: string) {
-  console.log('Cleaning LOGS directory...')
   fs.readdir(path, (err, files) => {
     if (err) throw err
     for (const file of files) {

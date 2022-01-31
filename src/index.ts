@@ -61,7 +61,10 @@ function initializeLogsDirectory() {
   }
 
   // empty directory 
-  if (config.cleanLogsPathOnStart) clearDir(logsAbsPath)
+  if (config.cleanLogsPathOnStart) {
+    console.log('Cleaning LOGS directory...')
+    clearDir(logsAbsPath)
+  }
 }
 
 async function init(): Promise<void> {
