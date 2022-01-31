@@ -15,7 +15,6 @@ export async function createBuyOrder(
   startTime: number,
   logger: OperationLogger
 ): Promise<{ order: GateOrderDetails, amount: string }> {
-  console.log('new attempt!')
 
   /**
    * 
@@ -64,7 +63,7 @@ export async function createBuyOrder(
   logger.log(' - Buy amount :', Number(buyAmount), symbol)
   logger.log(' - Buy price :', Number(buyPrice), `USDT (currentPrice + ${config.buy.buyDistancePercent}%)`)
   logger.log(' - Operation cost :', operationCost, `USDT (budget: ${operationBudget} USDT )`)
-  logger.log(' - Effective amount', effectiveAmount, `(buyAmount - fees`)
+  logger.log(' - Effective amount', effectiveAmount, `(buyAmount - fees)`)
 
   /**
    * 

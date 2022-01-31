@@ -5,8 +5,7 @@ import { EarlyBuyBot } from './bot'
 import { handleSignalInterrupt } from './lib/sigint'
 import { validateConfig } from './config/validate-config'
 import fs from 'fs'
-import { createPath } from './lib/create-path'
-import { getProjectRootDir } from './lib/path'
+import { clearDir, createPath, getProjectRootDir } from './lib/file'
 
 console.clear()
 
@@ -62,17 +61,7 @@ function initializeLogsDirectory() {
   }
 
   // empty directory 
-  if (config.cleanLogsPathOnStart) {
-    console.log('Cleaning LOGS directory...')
-    fs.readdir(logsAbsPath, (err, files) => {
-      if (err) throw err
-      for (const file of files) {
-        fs.unlink(createPath(logsAbsPath, file), err => {
-          if (err) throw err
-        })
-      }
-    })
-  }
+  if (config.cleanLogsPathOnStart) clearDir(logsAbsPath)
 }
 
 async function init(): Promise<void> {

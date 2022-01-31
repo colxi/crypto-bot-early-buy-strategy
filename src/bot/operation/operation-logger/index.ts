@@ -1,7 +1,6 @@
 import { config } from '@/config'
-import { createPath } from '@/lib/create-path'
 import { getDateAsDDMMYYYY, getTimeAsHHMMSS } from '@/lib/date'
-import { getProjectRootDir } from '@/lib/path'
+import { createPath, getProjectRootDir } from '@/lib/file'
 import fs from 'fs'
 import { isPlainObject } from 'lodash'
 

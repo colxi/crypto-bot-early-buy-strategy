@@ -1,3 +1,5 @@
+import { config } from '@/config'
+import { clearDir, createPath, getProjectRootDir } from '@/lib/file'
 import readline from 'readline'
 import { EarlyBuyBot } from '..'
 import { OperationEndReason } from '../operation/types'
@@ -5,11 +7,13 @@ import { OperationEndReason } from '../operation/types'
 const commandsDictionary = [
   { command: 'q', name: 'Quit', usage: 'q' },
   { command: 'h', name: 'Help', usage: 'h' },
-  { command: 'cls', name: 'Clear', usage: 'cls' },
-  { command: 'ol', name: 'Operation list', usage: 'ol' },
-  { command: 'os', name: 'Operations select', usage: 'os <OPERATION_ID>' },
+  { command: 'cls', name: 'Clear screen', usage: 'cls' },
+  { command: 'ol', name: 'Operations list', usage: 'ol' },
+  { command: 'oi', name: 'Operation info', usage: 'oi <OPERATION_ID>' },
   { command: 'ok', name: 'Operation kill', usage: 'ok <OPERATION_ID>' },
   { command: 'oc', name: 'Operation create', usage: 'oc <ASSET_SYMBOL>' },
+  { command: 'gab', name: 'Gate available balance', usage: 'gab' },
+  { command: 'lr', name: 'Logs remove', usage: 'lg' },
 ] as const
 
 type Command = (typeof commandsDictionary)[number]['command']
@@ -50,9 +54,11 @@ export class CLI {
       h: () => { this.commandHelp(parameters) },
       cls: () => { this.commandCls(parameters) },
       ol: () => { this.commandOperationList(parameters) },
-      os: () => { this.commandOperationSelect(parameters) },
+      oi: () => { this.commandOperationInfo(parameters) },
       ok: () => { this.commandOperationKill(parameters) },
       oc: () => { this.commandOperationCreate(parameters) },
+      gab: () => { this.commandGateAvailableBalance(parameters) },
+      lr: () => { this.commandLogsRemove(parameters) },
     }
 
     if (isValidCommand(command)) handlers[command](parameters)
@@ -80,12 +86,15 @@ export class CLI {
   async commandHelp(params: string) {
     console.log('List of available commands...')
 
-    const columnsWidth = [10, 20, 0]
+    const columnsWidth = [10, 30, 0]
 
     const colT1 = 'COMMAND'.padEnd(columnsWidth[0], ' ')
     const colT2 = 'NAME'.padEnd(columnsWidth[1], ' ')
     const colT3 = 'USAGE'
-    console.log(`${colT1} ${colT2} ${colT3}`)
+    const titles = `${colT1} ${colT2} ${colT3}`
+    console.log()
+    console.log(titles)
+    console.log(''.padEnd(titles.length, '-'))
 
     commandsDictionary.forEach((i) => {
       const col1 = i.command.padEnd(columnsWidth[0], ' ')
@@ -99,15 +108,15 @@ export class CLI {
   async commandOperationList(params: string) {
     console.log('Listing active Operations...')
     const activeOperations = Object.values(this.bot.operations)
-    if (!activeOperations.length) console.log('No active operations found')
+    if (!activeOperations.length) console.log('There are no active operations')
     else activeOperations.forEach(i => console.log(` ID: ${i.id} | ASSET PAIR: ${i.assetPair} | AMOUNT : ${i.amount}`))
   }
 
 
-  async commandOperationSelect(params: string) {
+  async commandOperationInfo(params: string) {
     const [operationID, ...parameters] = params.split(' ')
     const operation = this.bot.operations[operationID]
-    if (!operation) console.log('Operation ID not found. Use Operation list to print all operations.')
+    if (!operation) console.log(`Operation (${operationID}) not found. Use "ol" to list all operations.`)
     else {
       console.log('Operation details...')
       console.log(operation)
@@ -118,7 +127,7 @@ export class CLI {
   async commandOperationKill(params: string) {
     const [operationID, ...parameters] = params.split(' ')
     const operation = this.bot.operations[operationID]
-    if (!operation) console.log('Operation ID not found. Use Operation list to print all operations.')
+    if (!operation) console.log(`Operation (${operationID}) not found. Use "ol" to list all operations.`)
     else {
       console.log('Killing operation...')
       operation.finish(OperationEndReason.ERROR, new Error('Operation KILL requested by user'))
@@ -133,5 +142,18 @@ export class CLI {
       this.bot.createOperation(assetSymbol.toUpperCase())
     }
   }
+
+  async commandGateAvailableBalance(params: string) {
+    console.log('Checking Gate Available USDT balance...')
+    const balance = await this.bot.gate.geAvailableBalanceUSDT()
+    console.log(balance, 'USDT')
+  }
+
+  async commandLogsRemove(params: string) {
+    console.log('Removing all logs...')
+    const logsAbsPath = createPath(getProjectRootDir(), config.logsPath)
+    if (config.cleanLogsPathOnStart) clearDir(logsAbsPath)
+  }
+
 }
 

@@ -126,7 +126,7 @@ export class Operation extends EventedService<ServiceEvents> {
     await sendEmail('EMERGENCY SELL order required.')
     let attemptCounter = 0
     while (true) {
-      this.logger.error(` - EMERGENCY SELL order (Attempt ${attemptCounter})...`)
+      this.logger.error(` - Killing operation with EMERGENCY SELL order (Attempt ${attemptCounter})...`)
       try {
         await this.createEmergencySellOrder()
         if (this.emergencySellOrder?.status === Order.Status.Closed) break

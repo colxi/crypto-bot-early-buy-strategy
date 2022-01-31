@@ -95,19 +95,24 @@ export class EarlyBuyBot {
      */
     let operation: Operation
     try {
+      console.log(`Creating operation for ${assetPair}...`)
       operation = await Operation.create(this.gate, symbol)
     } catch (e) {
-      console.log('🚨 ERROR CREATING OPERATION :', this.gate.getGateResponseError(e))
-      console.log('🚨 Symbol announcement ignored (check logs)')
+      console.log(`ERROR creating operation ${assetPair} :`, this.gate.getGateResponseError(e))
       return
     }
     this.operations[operation.id] = operation
 
     /**
      * 
-     * Handle OPERATION end
+     * Handle OPERATION events
      */
+    operation.subscribe('operationStarted', (event) => {
+      console.log(`Operation ${operation.id} started! (${assetPair}`)
+    })
+
     operation.subscribe('operationFinished', (event) => {
+      console.log(`Operation ${operation.id} ended! (${assetPair}`)
       delete this.operations[event.detail.operation.id]
     })
 
