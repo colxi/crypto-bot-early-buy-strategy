@@ -74,10 +74,14 @@ export class GateClient {
   }
 
   public async purgeTriggeredOrder(triggeredOrderId: string, assetPair: AssetPair) {
+    console.log('DELETING triggered order id', triggeredOrderId)
     const { fired_order_id: limitOrderId } = await this.getTriggeredOrderDetails(triggeredOrderId)
 
     await this.spot.cancelSpotPriceTriggeredOrder(triggeredOrderId)
-    if (limitOrderId) await this.spot.cancelOrder(limitOrderId, assetPair, { account: 'normal' })
+    if (limitOrderId) {
+      console.log('DELETING triggered LIMIT order id', limitOrderId)
+      await this.spot.cancelOrder(limitOrderId, assetPair, { account: 'normal' })
+    }
   }
 
   public async getTriggeredOrderStatus(

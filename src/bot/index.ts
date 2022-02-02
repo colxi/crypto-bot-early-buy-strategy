@@ -51,7 +51,7 @@ export class EarlyBuyBot {
   gate: GateClient
   socket: WebsocketConnection
   operations: Record<string, Operation> = {}
-  isBusy: boolean = false
+  isCreatingAnotherOperation: boolean = false
 
 
   static async create(socket: WebsocketConnection, gate: GateClient): Promise<EarlyBuyBot> {
@@ -63,8 +63,12 @@ export class EarlyBuyBot {
   public async createOperation(symbol: SymbolName): Promise<void> {
     console.log(`New asset announced: ${symbol}`)
 
-    if (this.isBusy) console.log('Busy creating another operation. Ignoring announcement...')
-    else this.isBusy = true
+    if (this.isCreatingAnotherOperation) {
+      console.log('Busy creating another operation. Ignoring announcement...')
+      return
+    } 
+    
+    this.isCreatingAnotherOperation = true
 
 
     /**
@@ -75,6 +79,7 @@ export class EarlyBuyBot {
     const assetPair: AssetPair = `${symbol}_USDT`
     if (this.operations[assetPair]) {
       console.log(`There is another ongoing Operation for ${assetPair}. Ignoring announcement...`)
+      this.isCreatingAnotherOperation = false
       return
     }
 
@@ -85,6 +90,7 @@ export class EarlyBuyBot {
      */
     if (Object.keys(this.operations).length === config.operation.maxSimultaneousOperations) {
       console.log('Max simultaneous operations limit reached. Ignoring announcement...')
+      this.isCreatingAnotherOperation = false
       return
     }
 
@@ -99,6 +105,7 @@ export class EarlyBuyBot {
       operation = await Operation.create(this.gate, symbol)
     } catch (e) {
       console.log(`ERROR creating operation ${assetPair} :`, this.gate.getGateResponseError(e))
+      this.isCreatingAnotherOperation = false
       return
     }
     this.operations[operation.id] = operation
@@ -121,7 +128,7 @@ export class EarlyBuyBot {
      * Ready!
      * 
      */
-    this.isBusy = false
+    this.isCreatingAnotherOperation = false
   }
 
 }

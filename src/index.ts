@@ -9,6 +9,20 @@ import { clearDir, createPath, getProjectRootDir } from './lib/file'
 
 console.clear()
 
+
+
+process.on('uncaughtException', function err(e ){
+  console.log('CAPTURAT!')
+  console.log(e)
+  //console.log('DETAILS')
+  //console.log((e as any).detail )
+  //console.log((e as any).details )
+  //console.log('RESPONSE')
+  //console.log((e as any).response )
+  process.exit()
+});
+
+
 function createWebsocket(): Promise<WebsocketConnection> {
   let isInitialized = false
 
@@ -24,7 +38,12 @@ function createWebsocket(): Promise<WebsocketConnection> {
     })
 
     socket.subscribe('message', (event) => {
+      console.log(event.detail.message)
       const message = event.detail.message
+      if(message ==='raul not in whitelist. Contact @ftor1 in telegram.'){
+        socket.reconnect()
+        return
+      }
       // PONG message looks like :  "pong {timestamp}"
       const isPongMessage = typeof message === 'string' && message.split(' ')[0] === 'pong'
       if (isPongMessage) {
@@ -68,7 +87,6 @@ function initializeLogsDirectory() {
 }
 
 async function init(): Promise<void> {
-
   try {
     handleSignalInterrupt()
     validateConfig()
@@ -78,6 +96,7 @@ async function init(): Promise<void> {
     await EarlyBuyBot.create(socket, gate)
   } catch (e) {
     console.log('Error during initialization', (e as any)?.message)
+
   }
 }
 

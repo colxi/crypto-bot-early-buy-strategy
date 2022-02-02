@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import EventedService from '../evented-service'
 import { CustomEvent } from '../evented-service/custom-event'
+import { sleep } from '../sleep'
 import {
   WebSocketStatus,
   WebsocketConnectionConfig,
@@ -106,6 +107,12 @@ export default class WebsocketConnection extends EventedService<ServiceEvents>{
       this.#sentMessagesCount = 0
     }
   }
+  
+  public reconnect = async (): Promise<void> => {
+    this.disconnect()
+    await sleep(10000)
+    this.connect()
+  }
 
   #log = (...args: any[]): void => {
     void (args)
@@ -191,9 +198,11 @@ export default class WebsocketConnection extends EventedService<ServiceEvents>{
     if (
       !this.#isRequestedDisconnection &&
       this.reconnectOnDisconnection
-    ) setTimeout(
-      this.connect,
-      this.reconnectOnDisconnectionDelay
-    )
+    ) {
+      setTimeout(
+        this.connect,
+        this.reconnectOnDisconnectionDelay
+      )
+    }
   }
 }

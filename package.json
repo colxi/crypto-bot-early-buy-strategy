@@ -38,5 +38,10 @@
     "build:live": "nodemon --no-stdin --watch 'src/**/*.ts' --exec 'ts-node -r tsconfig-paths/register' src/index.ts",
     "start:once": "ts-node -r tsconfig-paths/register src/index.ts",
     "start:server": "ts-node ./src/_test-socket/index.ts"
+  },
+  "eslintConfig": {
+    "eslint-plugin-promise" : "error",
+    "require-await": "off",
+    "@typescript-eslint/require-await": "error"
   }
 }

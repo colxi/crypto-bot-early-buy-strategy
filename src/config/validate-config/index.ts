@@ -21,6 +21,6 @@ export function validateConfig() {
   // stopLoss
   if (config.stopLoss.triggerDistancePercent > 0) throw new Error('Invalid config.stopLoss.triggerDistancePercent. Value must be a negative percentage')
   if (config.stopLoss.sellDistancePercent > 0) throw new Error('Invalid config.stopLoss.sellDistancePercent. Value must be a negative percentage')
-  // sell
-  if (config.takeProfit.sellDistancePercent < 0) throw new Error('Invalid config.sell.sellDistancePercent. Value must be a positive percentage')
+  // takeProfit
+ // if (config.takeProfit.sellDistancePercent < 0) throw new Error('Invalid config.sell.sellDistancePercent. Value must be a positive percentage')
 }

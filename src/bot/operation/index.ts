@@ -51,9 +51,8 @@ export class Operation extends EventedService<ServiceEvents> {
     this.operationStatus = OperationStatus.ACTIVE
 
     this.createTriggeredOrders()
-    this.startOperationTracking()
+    this.startContextTracking()
     this.dispatchEvent('operationStarted', { operation: this })
-
   }
 
 
@@ -116,7 +115,7 @@ export class Operation extends EventedService<ServiceEvents> {
 
     await this.stopOperationTracking()
     await this.cancelRemainingOperationOrders()
-
+    
     if (endingReason === OperationEndReason.ERROR) await this.handleOperationError(error)
 
     this.logger.lineBreak()
@@ -132,19 +131,32 @@ export class Operation extends EventedService<ServiceEvents> {
     this.logger.error(`Handling Operation error...`)
     this.logger.error(` - Operation ERROR : ${error?.message}`)
     if (isKnownError) this.logger.error(` - Operation ERROR Data:`, JSON.stringify(error.data))
-    await sendEmail('EMERGENCY SELL order required.')
+    
+    try{ await sendEmail('EMERGENCY SELL order required.')
+    }catch(e){ this.logger.error('Error sending EMERGENCY SELL email', e)}
+
     let attemptCounter = 0
+    const attemptModifier = 0.01
+    const attemptModifierLimit = 1
+
     while (true) {
-      this.logger.error(` - Killing operation with EMERGENCY SELL order (Attempt ${attemptCounter})...`)
+      this.logger.error(` - Creating EMERGENCY SELL order (Attempt ${attemptCounter})...`)
       try {
-        await this.createEmergencySellOrder()
+        let modifier = attemptCounter * attemptModifier
+        if(modifier > attemptModifierLimit) modifier= attemptModifierLimit
+
+        await this.createEmergencySellOrder(modifier)
         if (this.emergencySellOrder?.status === Order.Status.Closed) break
-        else this.logger.error(' - EMERGENCY SELL order not executed!')
+        else {
+          throw new Error(`EMERGENCY SELL status = ${this.emergencySellOrder?.status}`)
+        }
       } catch (e) {
         this.logger.error(' - EMERGENCY SELL order creation failed!')
+        this.logger.error(` - ERROR DETAILS : ${this.gate.getGateResponseError(e)}`)
       }
       attemptCounter++
     }
+
     this.logger.success(' - EMERGENCY SELL order executed...')
   }
 
@@ -193,7 +205,7 @@ export class Operation extends EventedService<ServiceEvents> {
   }
 
 
-  private async createEmergencySellOrder(): Promise<void> {
+  private async createEmergencySellOrder(modifier: number = 0): Promise<void> {
     this.emergencySellOrder = await createEmergencySellOrder(
       this.gate,
       this.symbol,
@@ -201,14 +213,15 @@ export class Operation extends EventedService<ServiceEvents> {
       this.startTime,
       this.buyOrder.price,
       this.amount,
-      this.logger
+      this.logger,
+      modifier
     )
   }
 
   private async cancelRemainingOperationOrders(): Promise<void> {
     //  Purge TAKE PROFIT order
     try {
-      this.gate.purgeTriggeredOrder(this.takeProfitTriggeredOrder!.id, this.assetPair)
+      await this.gate.purgeTriggeredOrder(this.takeProfitTriggeredOrder!.id, this.assetPair)
     } catch (e) {
       const status = (e as any)?.response?.status
       if (status !== 400) this.logger.error('Error purging TAKE PROFIT TRIGGERED order')
@@ -216,7 +229,7 @@ export class Operation extends EventedService<ServiceEvents> {
 
     //  Purge STOP LOSS order
     try {
-      this.gate.purgeTriggeredOrder(this.stopLossTriggeredOrder!.id, this.assetPair)
+      await this.gate.purgeTriggeredOrder(this.stopLossTriggeredOrder!.id, this.assetPair)
     } catch (e) {
       const status = (e as any)?.response?.status
       if (status !== 400) this.logger.error('Error purging STOP LOSS TRIGGERED order')
@@ -233,7 +246,7 @@ export class Operation extends EventedService<ServiceEvents> {
   * ----------------------------------------------------------------------------------------------*/
 
 
-  private startOperationTracking() {
+  private startContextTracking() {
     this.operationTrackingTimer = setInterval(
       () => this.trackOperationOrders(),
       config.operation.orderTrackingIntervalInMillis
@@ -280,8 +293,10 @@ export class Operation extends EventedService<ServiceEvents> {
         this.assetPair,
         this.logger
       )
-      if (isTakeProfitOrderFulfilled) await this.finish(OperationEndReason.TAKE_PROFIT_FULFILLED)
-      return
+      if (isTakeProfitOrderFulfilled) {
+        await this.finish(OperationEndReason.TAKE_PROFIT_FULFILLED)
+        return
+      }
     } catch (e) {
       await this.finish(OperationEndReason.ERROR, e as Error)
     }
@@ -294,8 +309,10 @@ export class Operation extends EventedService<ServiceEvents> {
         this.assetPair,
         this.logger
       )
-      if (isStopLossOrderFulfilled) await this.finish(OperationEndReason.STOP_LOSS_FULFILLED)
-      return
+      if (isStopLossOrderFulfilled) {
+        await this.finish(OperationEndReason.STOP_LOSS_FULFILLED)
+        return
+      }
     } catch (e) {
       await this.finish(OperationEndReason.ERROR, e as Error)
     }

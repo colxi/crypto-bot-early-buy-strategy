@@ -29,7 +29,8 @@ export class CLI {
     this.bot = bot
     this.promptInterface = readline.createInterface({
       input: process.stdin,
-      output: process.stdout
+      output: process.stdout,
+      terminal: false,
     })
     this.promptInterface.resume()
     this.prompt()
