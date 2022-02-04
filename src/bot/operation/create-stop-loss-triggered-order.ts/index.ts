@@ -49,7 +49,7 @@ export async function createStopLossTriggeredOrder(
       trigger: {
         price: triggerPrice,
         rule: SpotPriceTrigger.Rule.LessThanOrEqualTo,
-        expiration: TimeInSeconds.ONE_HOUR
+        expiration: config.stopLoss.orderExpiration
       },
       put: {
         type: "limit",

@@ -71,7 +71,7 @@ export async function createBuyOrder(
    * 
    */
   if (operationCost < config.operation.minimumOperationCostUSD) {
-    const errorMessage = `Operation cost is lower than allowed by limits`
+    const errorMessage = `Operation cost (${operationCost}) is lower than allowed by limits (${config.operation.minimumOperationCostUSD})`
     logger.error(errorMessage)
     const newAssetPairPrice = await gate.getAssetPairPrice(assetPair)
     logger.log(` - New asset price : ${newAssetPairPrice}`)

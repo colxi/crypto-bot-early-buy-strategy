@@ -1,5 +1,6 @@
 import { config } from '@/config'
 import { clearDir, createPath, getProjectRootDir } from '@/lib/file'
+import { AssetPair } from '@/lib/gate-client/types'
 import readline from 'readline'
 import { EarlyBuyBot } from '..'
 import { OperationEndReason } from '../operation/types'
@@ -8,12 +9,13 @@ const commandsDictionary = [
   { command: 'q', name: 'Quit', usage: 'q' },
   { command: 'h', name: 'Help', usage: 'h' },
   { command: 'cls', name: 'Clear screen', usage: 'cls' },
-  { command: 'ol', name: 'Operations list', usage: 'ol' },
+  { command: 'ls', name: 'List operations', usage: 'ls' },
   { command: 'oi', name: 'Operation info', usage: 'oi <OPERATION_ID>' },
-  { command: 'ok', name: 'Operation kill', usage: 'ok <OPERATION_ID>' },
-  { command: 'oc', name: 'Operation create', usage: 'oc <ASSET_SYMBOL>' },
-  { command: 'gab', name: 'Gate available balance', usage: 'gab' },
-  { command: 'lr', name: 'Logs remove', usage: 'lg' },
+  { command: 'ko', name: 'Kill operation', usage: 'ko <OPERATION_ID>' },
+  { command: 'co', name: 'Create Operation', usage: 'co <ASSET_SYMBOL>' },
+  { command: 'sb', name: 'Show balance', usage: 'sb' },
+  { command: 'gap', name: 'Get Asset price', usage: 'gap <ASSET_SYMBOL>' },
+  { command: 'cl', name: 'Clear logs', usage: 'cl' },
 ] as const
 
 type Command = (typeof commandsDictionary)[number]['command']
@@ -30,9 +32,9 @@ export class CLI {
     this.promptInterface = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      terminal: false,
     })
     this.promptInterface.resume()
+    this.promptInterface.on("SIGINT", () => { this.commandQuit().catch((e) => { throw e }) })
     this.prompt()
   }
 
@@ -40,9 +42,10 @@ export class CLI {
   bot: EarlyBuyBot
 
   private prompt() {
-    this.promptInterface.question('> ', async (message) => {
-      await this.interpreter(message)
-      this.prompt()
+    this.promptInterface.question('> ', (message) => {
+      this.interpreter(message)
+        .then(() => this.prompt())
+        .catch(e => console.log(e))
     })
   }
 
@@ -51,19 +54,23 @@ export class CLI {
     const parameters = params.join(' ')
 
     const handlers: Record<Command, any> = {
-      q: async () => { await this.commandQuit(parameters) },
-      h: async () => { await this.commandHelp(parameters) },
-      cls: async () => { await this.commandCls(parameters) },
-      ol: async () => { await this.commandOperationList(parameters) },
+      q: async () => { await this.commandQuit() },
+      h: async () => { await this.commandHelp() },
+      cls: async () => { await this.commandCls() },
+      ls: async () => { await this.commandOperationList() },
       oi: async () => { await this.commandOperationInfo(parameters) },
-      ok: async () => { await this.commandOperationKill(parameters) },
-      oc: async () => { await this.commandOperationCreate(parameters) },
-      gab: async () => { await this.commandGateAvailableBalance(parameters) },
-      lr: async () => { await this.commandLogsRemove(parameters) },
+      ko: async () => { await this.commandOperationKill(parameters) },
+      co: async () => { await this.commandOperationCreate(parameters) },
+      sb: async () => { await this.commandGateAvailableBalance() },
+      cl: async () => { await this.commandLogsRemove() },
+      gap: async () => { await this.getAssetPrice(parameters) },
     }
 
     if (isValidCommand(command)) await handlers[command](parameters)
-    else console.log('unknown command', command)
+    else {
+      console.log('Unknown command', command)
+      console.log()
+    }
   }
 
 
@@ -73,18 +80,19 @@ export class CLI {
    * 
    *----------------------------------------------------------------------------------------------*/
 
-  async commandQuit(params: string) {
+  async commandQuit() {
     console.log('PRESS CTRL+C again to exit')
-    process.exit()
+    console.log('')
+    process.kill(process.pid, 'SIGTERM')
   }
 
 
-  async commandCls(params: string) {
+  async commandCls() {
     console.clear()
   }
 
 
-  async commandHelp(params: string) {
+  async commandHelp() {
     console.log('List of available commands...')
 
     const columnsWidth = [10, 30, 0]
@@ -103,59 +111,72 @@ export class CLI {
       const col3 = i.usage
       console.log(`${col1} ${col2} ${col3}`)
     })
+    console.log('')
   }
 
 
-  async commandOperationList(params: string) {
+  async commandOperationList() {
     console.log('Listing active Operations...')
     const activeOperations = Object.values(this.bot.operations)
     if (!activeOperations.length) console.log('There are no active operations')
     else activeOperations.forEach(i => console.log(` ID: ${i.id} | ASSET PAIR: ${i.assetPair} | AMOUNT : ${i.amount}`))
+    console.log('')
   }
 
 
   async commandOperationInfo(params: string) {
-    const [operationID, ...parameters] = params.split(' ')
+    const [operationID] = params.split(' ')
     const operation = this.bot.operations[operationID]
-    if (!operation) console.log(`Operation (${operationID}) not found. Use "ol" to list all operations.`)
+    if (!operation) console.log(`Operation (${operationID}) not found.`)
     else {
       console.log('Operation details...')
       console.log(operation)
     }
+    console.log('')
   }
 
 
   async commandOperationKill(params: string) {
-    const [operationID, ...parameters] = params.split(' ')
+    const [operationID,] = params.split(' ')
     const operation = this.bot.operations[operationID]
-    if (!operation) console.log(`Operation (${operationID}) not found. Use "ol" to list all operations.`)
+    if (!operation) console.log(`Operation (${operationID}) not found.`)
     else {
       console.log('Killing operation...')
-      operation.finish(OperationEndReason.ERROR, new Error('Operation KILL requested by user'))
+      await operation.finish(OperationEndReason.ERROR, new Error('Operation KILL requested by user'))
     }
+    console.log('')
   }
 
   async commandOperationCreate(params: string) {
-    const [assetSymbol, ...parameters] = params.split(' ')
+    const [assetSymbol] = params.split(' ')
     if (!assetSymbol) console.log('Please provide a valid symbol (eg: BTC, ETH, ...).')
     else {
       console.log('Creating operation...')
-      this.bot.createOperation(assetSymbol.toUpperCase())
+      await this.bot.createOperation(assetSymbol.toUpperCase())
     }
+    console.log('')
   }
 
-  async commandGateAvailableBalance(params: string) {
+  async commandGateAvailableBalance() {
     console.log('Checking Gate Available USDT balance...')
     const balance = await this.bot.gate.geAvailableBalanceUSDT()
     console.log(balance, 'USDT')
+    console.log('')
   }
 
-  async commandLogsRemove(params: string) {
+  async commandLogsRemove() {
     console.log('Removing all logs...')
     const logsAbsPath = createPath(getProjectRootDir(), config.logsPath)
     clearDir(logsAbsPath)
     console.log('Done!')
+    console.log('')
   }
 
+  async getAssetPrice(params: string) {
+    console.log('Getting Asset price...')
+    const assetPair: AssetPair = `${params.toUpperCase()}_USDT`
+    const price = await this.bot.gate.getAssetPairPrice(assetPair)
+    console.log(`${assetPair} ${price} USDT`)
+    console.log('')
+  }
 }
-

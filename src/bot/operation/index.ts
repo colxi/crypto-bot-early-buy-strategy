@@ -1,5 +1,5 @@
 import { config } from '@/config'
-import { Order, SpotPricePutOrder } from 'gate-api'
+import { Order } from 'gate-api'
 import { GateClient } from '../../lib/gate-client'
 import { getDateAsDDMMYYYY, getTimeAsHHMMSS } from '../../lib/date'
 import EventedService from '../../lib/evented-service'
@@ -50,7 +50,7 @@ export class Operation extends EventedService<ServiceEvents> {
     this.stopLossTriggeredOrder = null
     this.operationStatus = OperationStatus.ACTIVE
 
-    this.createTriggeredOrders()
+    this.createTriggeredOrders().catch((e) => { throw e })
     this.startContextTracking()
     this.dispatchEvent('operationStarted', { operation: this })
   }
@@ -115,7 +115,7 @@ export class Operation extends EventedService<ServiceEvents> {
 
     await this.stopOperationTracking()
     await this.cancelRemainingOperationOrders()
-    
+
     if (endingReason === OperationEndReason.ERROR) await this.handleOperationError(error)
 
     this.logger.lineBreak()
@@ -131,21 +131,17 @@ export class Operation extends EventedService<ServiceEvents> {
     this.logger.error(`Handling Operation error...`)
     this.logger.error(` - Operation ERROR : ${error?.message}`)
     if (isKnownError) this.logger.error(` - Operation ERROR Data:`, JSON.stringify(error.data))
-    
-    try{ await sendEmail('EMERGENCY SELL order required.')
-    }catch(e){ this.logger.error('Error sending EMERGENCY SELL email', e)}
+
+    try {
+      await sendEmail('EMERGENCY SELL order required.')
+    } catch (e) { this.logger.error('Error sending EMERGENCY SELL email', e) }
 
     let attemptCounter = 0
-    const attemptModifier = 0.01
-    const attemptModifierLimit = 1
-
+    let currentPercentModifier = 0
     while (true) {
       this.logger.error(` - Creating EMERGENCY SELL order (Attempt ${attemptCounter})...`)
       try {
-        let modifier = attemptCounter * attemptModifier
-        if(modifier > attemptModifierLimit) modifier= attemptModifierLimit
-
-        await this.createEmergencySellOrder(modifier)
+        await this.createEmergencySellOrder(currentPercentModifier)
         if (this.emergencySellOrder?.status === Order.Status.Closed) break
         else {
           throw new Error(`EMERGENCY SELL status = ${this.emergencySellOrder?.status}`)
@@ -155,6 +151,10 @@ export class Operation extends EventedService<ServiceEvents> {
         this.logger.error(` - ERROR DETAILS : ${this.gate.getGateResponseError(e)}`)
       }
       attemptCounter++
+      currentPercentModifier += config.emergencySell.retryPercentModifier
+      if (currentPercentModifier > config.emergencySell.retryPercentModifierLimit) {
+        currentPercentModifier = config.emergencySell.retryPercentModifierLimit
+      }
     }
 
     this.logger.success(' - EMERGENCY SELL order executed...')
@@ -248,11 +248,11 @@ export class Operation extends EventedService<ServiceEvents> {
 
   private startContextTracking() {
     this.operationTrackingTimer = setInterval(
-      () => this.trackOperationOrders(),
+      () => { this.trackOperationOrders().catch(() => console.log('Failure on "trackOperationOrders"')) },
       config.operation.orderTrackingIntervalInMillis
     )
     this.priceTrackingTimer = setInterval(
-      () => this.trackAssetPairPrice(),
+      () => { this.trackAssetPairPrice().catch(() => console.log('Failure on "trackAssetPairPrice"')) },
       config.operation.priceTrackingIntervalInMillis
     )
   }

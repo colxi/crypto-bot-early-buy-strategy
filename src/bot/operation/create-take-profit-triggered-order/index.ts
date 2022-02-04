@@ -48,7 +48,7 @@ export async function createTakeProfitTriggeredOrder(
       trigger: {
         price: triggerPrice,
         rule: SpotPriceTrigger.Rule.GreaterThanOrEqualTo,
-        expiration: TimeInSeconds.ONE_HOUR
+        expiration: config.takeProfit.orderExpiration
       },
       put: {
         type: "limit",

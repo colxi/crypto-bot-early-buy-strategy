@@ -20,7 +20,6 @@ export interface BotConfig {
     maxSimultaneousOperations: number
     priceTrackingIntervalInMillis: number
     orderTrackingIntervalInMillis: number
-    emergencySellOrderDistancePercent: number
   },
   buy: {
     buyDistancePercent: number
@@ -29,9 +28,16 @@ export interface BotConfig {
   takeProfit: {
     triggerDistancePercent: number
     sellDistancePercent: number
+    orderExpiration: number
   }
   stopLoss: {
     triggerDistancePercent: number
     sellDistancePercent: number
+    orderExpiration: number
   },
+  emergencySell: {
+    sellDistancePercent: number
+    retryPercentModifier: number
+    retryPercentModifierLimit: number
+  }
 }

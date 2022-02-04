@@ -15,12 +15,13 @@ export function validateConfig() {
   if (config.operation.maxSimultaneousOperations < 1) throw new Error('Invalid config.operation.maxSimultaneousOperations. Value must be a positive number')
   if (config.operation.priceTrackingIntervalInMillis < 50) throw new Error('Invalid config.operation.priceTrackingIntervalInMillis. Value must be greater than 50')
   if (config.operation.orderTrackingIntervalInMillis < 50) throw new Error('Invalid config.operation.orderTrackingIntervalInMillis. Value must be greater than 50')
-  if (config.operation.emergencySellOrderDistancePercent > 0) throw new Error('Invalid config.operation.emergencySellOrderDistancePercent. Value must be a negative number')
   // buy
   if (config.buy.buyDistancePercent < 0) throw new Error('Invalid config.buy.buyDistancePercent. Must contain a value')
   // stopLoss
   if (config.stopLoss.triggerDistancePercent > 0) throw new Error('Invalid config.stopLoss.triggerDistancePercent. Value must be a negative percentage')
   if (config.stopLoss.sellDistancePercent > 0) throw new Error('Invalid config.stopLoss.sellDistancePercent. Value must be a negative percentage')
   // takeProfit
- // if (config.takeProfit.sellDistancePercent < 0) throw new Error('Invalid config.sell.sellDistancePercent. Value must be a positive percentage')
+  if (config.takeProfit.sellDistancePercent < 0) throw new Error('Invalid config.sell.sellDistancePercent. Value must be a positive percentage')
+  // emergency sell
+  if (config.emergencySell.sellDistancePercent > 0) throw new Error('Invalid config.emergencySell.sellDistancePercent. Value must be a negative number')
 }

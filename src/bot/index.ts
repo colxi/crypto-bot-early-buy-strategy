@@ -22,12 +22,12 @@ export class EarlyBuyBot {
     console.log
     console.log('')
 
-    const cli = new CLI(this)
+    new CLI(this)
 
     this.socket.subscribe('message', (event) => {
       const { message } = event.detail
       if (typeof message === 'string') {
-        let isSupportedSignal: boolean = AllowedSignals.some(i => message.toLowerCase().includes(i.toLowerCase()))
+        const isSupportedSignal: boolean = AllowedSignals.some(i => message.toLowerCase().includes(i.toLowerCase()))
         if (!isSupportedSignal) return
         const announcement = getSymbolsFromMessage(message)
         if (!announcement) return
@@ -66,8 +66,8 @@ export class EarlyBuyBot {
     if (this.isCreatingAnotherOperation) {
       console.log('Busy creating another operation. Ignoring announcement...')
       return
-    } 
-    
+    }
+
     this.isCreatingAnotherOperation = true
 
 
@@ -114,7 +114,7 @@ export class EarlyBuyBot {
      * 
      * Handle OPERATION events
      */
-    operation.subscribe('operationStarted', (event) => {
+    operation.subscribe('operationStarted', () => {
       console.log(`Operation ${operation.id} started! (${assetPair}`)
     })
 

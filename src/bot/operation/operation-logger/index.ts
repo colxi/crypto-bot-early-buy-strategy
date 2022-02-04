@@ -9,26 +9,48 @@ export class OperationLogger {
   constructor(filename: string) {
     this.filename = filename
     this.filepath = createPath(getProjectRootDir(), config.logsPath, `${this.filename}.txt`)
+    this.sharedLogFilepath = createPath(getProjectRootDir(), config.logsPath, `_last.txt`)
+
+    try { fs.truncateSync(this.sharedLogFilepath, 0) }
+    catch (e) { console.log('Failed clearing GENERAL log file') }
+
+    this.isEnabled = true
     this.lineBreakChar = '\n'
   }
 
   private readonly filename: string
   private readonly filepath: string
+  private readonly sharedLogFilepath: string
   private readonly lineBreakChar: string
+  private isEnabled: boolean
 
   private save(...data: unknown[]) {
+    if (!this.isEnabled) return
     const time = `${getDateAsDDMMYYYY()} ${getTimeAsHHMMSS()}`
     const formatted = data
       .map(i => isPlainObject(i) ? JSON.stringify(i, null, 2) : Array.isArray(i) ? JSON.stringify(i) : String(i))
       .join(' ')
 
-    try { fs.appendFileSync(this.filepath, `${time} : ${formatted}${this.lineBreakChar}`) }
-    catch (e) { console.log('Err writing log', e) }
+    try {
+      fs.appendFileSync(this.filepath, `${time} : ${formatted}${this.lineBreakChar}`)
+      fs.appendFileSync(this.sharedLogFilepath, `${time} : ${formatted}${this.lineBreakChar}`)
+    }
+    catch (e) {
+      console.log('Err writing logs. LOGGER WILL BE DISABLED! ')
+      console.log((e as any)?.message)
+    }
   }
 
   public lineBreak() {
-    try { fs.appendFileSync(this.filepath, this.lineBreakChar) }
-    catch (e) { console.log('Error writing log', e) }
+    if (!this.isEnabled) return
+    try {
+      fs.appendFileSync(this.filepath, this.lineBreakChar)
+      fs.appendFileSync(this.sharedLogFilepath, this.lineBreakChar)
+    }
+    catch (e) {
+      console.log('Err writing logs (line break). LOGGER WILL BE DISABLED!')
+      console.log((e as any)?.message)
+    }
   }
 
   public log(...data: unknown[]) {

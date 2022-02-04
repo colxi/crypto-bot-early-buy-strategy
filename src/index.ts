@@ -6,21 +6,21 @@ import { handleSignalInterrupt } from './lib/sigint'
 import { validateConfig } from './config/validate-config'
 import fs from 'fs'
 import { clearDir, createPath, getProjectRootDir } from './lib/file'
+// import { ui } from './ui'
 
 console.clear()
 
 
-
-process.on('uncaughtException', function err(e ){
+process.on('uncaughtException', function err(e) {
   console.log('CAPTURAT!')
-  console.log(e)
+  console.log(e.message)
   //console.log('DETAILS')
   //console.log((e as any).detail )
   //console.log((e as any).details )
   //console.log('RESPONSE')
   //console.log((e as any).response )
   process.exit()
-});
+})
 
 
 function createWebsocket(): Promise<WebsocketConnection> {
@@ -40,8 +40,8 @@ function createWebsocket(): Promise<WebsocketConnection> {
     socket.subscribe('message', (event) => {
       console.log(event.detail.message)
       const message = event.detail.message
-      if(message ==='raul not in whitelist. Contact @ftor1 in telegram.'){
-        socket.reconnect()
+      if (message === 'raul not in whitelist. Contact @ftor1 in telegram.') {
+        void socket.reconnect()
         return
       }
       // PONG message looks like :  "pong {timestamp}"
@@ -56,7 +56,7 @@ function createWebsocket(): Promise<WebsocketConnection> {
       }
     })
 
-    socket.subscribe('connect', (event) => {
+    socket.subscribe('connect', () => {
       startTime = Date.now()
       socket.send('ping')
     })
@@ -96,8 +96,7 @@ async function init(): Promise<void> {
     await EarlyBuyBot.create(socket, gate)
   } catch (e) {
     console.log('Error during initialization', (e as any)?.message)
-
   }
 }
 
-init()
+void init()
