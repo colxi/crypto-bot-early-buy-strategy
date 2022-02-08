@@ -1,21 +1,20 @@
 import { config } from '@/config'
-import { TimeInSeconds } from '@/lib/date'
-import { GateClient } from '@/lib/gate-client'
-import { AssetPair, GateNewTriggeredOrderDetails, GateOrderDetails, SymbolName } from '@/lib/gate-client/types'
+import { AssetPair, GateOrderDetails, SymbolName } from '@/service/gate-client/types'
 import { applyPercentage, toFixed } from '@/lib/math'
-import { Order, SpotPricePutOrder, SpotPriceTrigger } from 'gate-api'
+import { Order } from 'gate-api'
 import { OperationError } from '../operation-error'
 import { OperationErrorCode } from '../operation-error/types'
-import { OperationLogger } from '../operation-logger'
+import { Logger } from '../../../../lib/logger'
+import { Gate } from '@/service/gate-client'
+import { Console } from '@/service/console'
 
 export async function createEmergencySellOrder(
-  gate: GateClient,
   symbol: SymbolName,
   assetPair: AssetPair,
   startTime: number,
   operationEntryPrice: string,
   amountToSell: string,
-  logger: OperationLogger,
+  logger: Logger,
   modifier: number = 0,
 ): Promise<GateOrderDetails> {
   logger.lineBreak()
@@ -28,7 +27,7 @@ export async function createEmergencySellOrder(
    */
   let assetPairPrice: number
   try {
-    assetPairPrice = await gate.getAssetPairPrice(assetPair)
+    assetPairPrice = await Gate.getAssetPairPrice(assetPair)
   } catch (e) {
     throw new OperationError(
       `Error ocurred retrieving "${assetPair}" price in Gate.io!`,
@@ -41,9 +40,9 @@ export async function createEmergencySellOrder(
    * Calculate amounts and sizes
    * 
    */
-  const usdtPrecision = gate.assetPairs[assetPair].precision!
+  const usdtPrecision = Gate.assetPairs[assetPair].precision!
   const effectivePercentage = config.emergencySell.sellDistancePercent - modifier
-  console.log('effectivePercentage', effectivePercentage, 'modifier', modifier)
+  Console.log('effectivePercentage', effectivePercentage, 'modifier', modifier)
   const sellPrice = toFixed(
     applyPercentage(assetPairPrice, effectivePercentage),
     usdtPrecision
@@ -60,7 +59,7 @@ export async function createEmergencySellOrder(
    */
   let order: GateOrderDetails
   try {
-    const { response } = await gate.spot.createOrder({
+    const { response } = await Gate.spot.createOrder({
       currencyPair: assetPair,
       side: Order.Side.Sell,
       amount: amountToSell,
@@ -72,7 +71,7 @@ export async function createEmergencySellOrder(
   } catch (e) {
     throw new OperationError(
       `Error when trying to execute EMERGENCY SELL order "${assetPair}"`,
-      { code: OperationErrorCode.ERROR_CREATING_EMERGENCY_SELL_ORDER, details: gate.getGateResponseError(e) }
+      { code: OperationErrorCode.ERROR_CREATING_EMERGENCY_SELL_ORDER, details: Gate.getGateResponseError(e) }
     )
   }
 

@@ -1,25 +1,49 @@
+import { config } from '@/config'
 import { ApiClient, Order, SpotApi, WalletApi } from 'gate-api'
-import { TimeInMillis } from '../date'
+import { TimeInMillis } from '../../lib/date'
+import { Console } from '../console'
 import { getAssetPairs } from './helpers/get-assets-pairs'
 import { geAvailableBalanceUSDT } from './helpers/get-balance-usdt'
 import { getLatency } from './helpers/get-latency'
-import { AssetPair, AssetPairsMap, GateAssetPairPriceDetails, GateClientOptions, GateOrderDetails, GateOrderId, GateTriggeredOrderDetails } from './types'
+import {
+  AssetPair,
+  AssetPairsMap,
+  GateAssetPairPriceDetails,
+  GateOrderDetails,
+  GateOrderId,
+  GateTriggeredOrderDetails
+} from './types'
 
 
-export class GateClient {
-  private constructor(options: GateClientOptions) {
-    this.client = options.client
-    this.spot = options.spot
-    this.wallet = options.wallet
-    this.assetPairs = options.assetPairs
-    setInterval(() => void this.updateAssetPairs(), TimeInMillis.ONE_DAY)
+class GateService {
+  constructor() {
+    //
   }
 
+  public client!: ApiClient
+  public spot!: SpotApi
+  public wallet!: WalletApi
+  public assetPairs!: AssetPairsMap
 
-  public client: ApiClient
-  public spot: SpotApi
-  public wallet: WalletApi
-  public assetPairs: AssetPairsMap
+
+  public async start(): Promise<void> {
+    const client = new ApiClient()
+    client.setApiKeySecret(config.gate.key, config.gate.secret)
+    const spot = new SpotApi(client)
+    const wallet = new WalletApi(client)
+    const assetPairs = await getAssetPairs(spot)
+
+    this.client = client
+    this.spot = spot
+    this.wallet = wallet
+    this.assetPairs = assetPairs
+    setInterval(() => void this.updateAssetPairs(), TimeInMillis.ONE_DAY)
+
+    Console.log('🟢 Initializing Gate Client...')
+    Console.log('Gate API latency: ', await Gate.getLatency(), 'ms (single way)')
+    Console.log('Available Balance: ', await Gate.geAvailableBalanceUSDT(), 'USDT')
+    Console.log('Available asset pairs: ', Object.keys(Gate.assetPairs).length)
+  }
 
 
   public async updateAssetPairs(): Promise<void> {
@@ -74,12 +98,10 @@ export class GateClient {
   }
 
   public async purgeTriggeredOrder(triggeredOrderId: string, assetPair: AssetPair) {
-    console.log('DELETING triggered order id', triggeredOrderId)
     const { fired_order_id: limitOrderId } = await this.getTriggeredOrderDetails(triggeredOrderId)
 
     await this.spot.cancelSpotPriceTriggeredOrder(triggeredOrderId)
     if (limitOrderId) {
-      console.log('DELETING triggered LIMIT order id', limitOrderId)
       await this.spot.cancelOrder(limitOrderId, assetPair, { account: 'normal' })
     }
   }
@@ -92,22 +114,7 @@ export class GateClient {
     return order.status
   }
 
-  public static async create(
-    key: string,
-    secret: string
-  ): Promise<GateClient> {
-    console.log('🟢 Initializing Gate Client...')
-    const client = new ApiClient()
-    client.setApiKeySecret(key, secret)
-    const spot = new SpotApi(client)
-    const wallet = new WalletApi(client)
-    const assetPairs = await getAssetPairs(spot)
-    const balance = await geAvailableBalanceUSDT(spot)
-    const clientLatency = await getLatency(spot)
-    console.log('Gate API latency:', clientLatency, 'ms (single way)')
-    console.log('Available Balance:', balance, 'USDT')
-    console.log('Available asset pairs:', Object.keys(assetPairs).length)
-    console.log()
-    return new GateClient({ client, spot, wallet, assetPairs })
-  }
+
 }
+
+export const Gate = new GateService()

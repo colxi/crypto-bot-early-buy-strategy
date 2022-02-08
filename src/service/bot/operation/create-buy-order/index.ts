@@ -1,20 +1,20 @@
 import { config } from '@/config'
-import { GateClient } from '@/lib/gate-client'
-import { AssetPair, GateOrderDetails, SymbolName } from '@/lib/gate-client/types'
+import { AssetPair, GateOrderDetails, SymbolName } from '@/service/gate-client/types'
 import { applyPercentage, getPercentage, toFixed } from '@/lib/math'
 import { Order } from 'gate-api'
 import { OperationError } from '../operation-error'
 import { OperationErrorCode } from '../operation-error/types'
-import { OperationLogger } from '../operation-logger'
+import { Logger } from '../../../../lib/logger'
+import { Gate } from '@/service/gate-client'
+import { OperationBuyOrderDetails } from '../types'
 
 
 export async function createBuyOrder(
-  gate: GateClient,
   symbol: SymbolName,
   assetPair: AssetPair,
   startTime: number,
-  logger: OperationLogger
-): Promise<{ order: GateOrderDetails, amount: string }> {
+  logger: Logger
+): Promise<OperationBuyOrderDetails> {
 
   /**
    * 
@@ -23,7 +23,7 @@ export async function createBuyOrder(
    */
   let assetPairPrice: number
   try {
-    assetPairPrice = await gate.getAssetPairPrice(assetPair)
+    assetPairPrice = await Gate.getAssetPairPrice(assetPair)
   } catch (e) {
     const errorMessage = `Error ocurred retrieving "${assetPair}" price in Gate.io!`
     logger.error(errorMessage)
@@ -37,7 +37,7 @@ export async function createBuyOrder(
    */
   let availableUSDTBalance: number
   try {
-    availableUSDTBalance = await gate.geAvailableBalanceUSDT()
+    availableUSDTBalance = await Gate.geAvailableBalanceUSDT()
   } catch (e) {
     const errorMessage = `Error ocurred retrieving available USDT balance Gate.io!`
     logger.error(errorMessage)
@@ -50,8 +50,8 @@ export async function createBuyOrder(
    * 
    */
   const operationBudget = getPercentage(availableUSDTBalance, config.operation.operationUseBalancePercent)
-  const currencyPrecision = gate.assetPairs[assetPair].amountPrecision!
-  const usdtPrecision = gate.assetPairs[assetPair].precision!
+  const currencyPrecision = Gate.assetPairs[assetPair].amountPrecision!
+  const usdtPrecision = Gate.assetPairs[assetPair].precision!
   const buyPrice = toFixed(applyPercentage(assetPairPrice, config.buy.buyDistancePercent), usdtPrecision)
   const buyAmount = toFixed(operationBudget / Number(buyPrice), currencyPrecision)
   const operationCost = Number(toFixed(Number(buyAmount) * Number(buyPrice), usdtPrecision))
@@ -73,7 +73,7 @@ export async function createBuyOrder(
   if (operationCost < config.operation.minimumOperationCostUSD) {
     const errorMessage = `Operation cost (${operationCost}) is lower than allowed by limits (${config.operation.minimumOperationCostUSD})`
     logger.error(errorMessage)
-    const newAssetPairPrice = await gate.getAssetPairPrice(assetPair)
+    const newAssetPairPrice = await Gate.getAssetPairPrice(assetPair)
     logger.log(` - New asset price : ${newAssetPairPrice}`)
     throw new OperationError(errorMessage, { code: OperationErrorCode.MINIMUM_OPERATION_COST_LIMIT })
   }
@@ -85,7 +85,7 @@ export async function createBuyOrder(
    */
   let order: GateOrderDetails
   try {
-    const { response } = await gate.spot.createOrder({
+    const { response } = await Gate.spot.createOrder({
       currencyPair: assetPair,
       side: Order.Side.Buy,
       amount: buyAmount,
@@ -99,7 +99,7 @@ export async function createBuyOrder(
   } catch (e) {
     const errorMessage = `Error when trying to execute BUY order "${assetPair}"`
     logger.error(errorMessage)
-    throw new OperationError(errorMessage, { code: OperationErrorCode.ERROR_CREATING_BUY_ORDER, details: gate.getGateResponseError(e) })
+    throw new OperationError(errorMessage, { code: OperationErrorCode.ERROR_CREATING_BUY_ORDER, details: Gate.getGateResponseError(e) })
   }
 
   /**
@@ -121,5 +121,14 @@ export async function createBuyOrder(
   logger.success(' - Ready!')
   logger.log(' - Buy order ID :', order.id)
   logger.log(' - Time since trade start :', Date.now() - startTime, 'ms')
-  return { order, amount: effectiveAmount }
+
+  return {
+    id: order.id,
+    originalAssetPrice: String(assetPairPrice),
+    buyPrice: order.price,
+    amount: order.amount,
+    operationCost: String(operationCost),
+    order: order
+  }
+
 }

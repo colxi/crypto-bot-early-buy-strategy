@@ -1,10 +1,12 @@
 import { config } from '@/config'
-import { GateClient } from '../lib/gate-client'
-import { AssetPair, SymbolName } from '../lib/gate-client/types'
-import WebsocketConnection from '../lib/websocket'
+import { AssetPair, SymbolName } from '../gate-client/types'
 import { getSymbolsFromMessage } from './message-process'
 import { Operation } from './operation'
-import { CLI } from './cli'
+import { clearDir, createPath, getProjectRootDir } from '@/lib/file'
+import fs from 'fs'
+import { Socket } from '@/service/socket'
+import { Console } from '@/service/console'
+import { Gate } from '@/service/gate-client'
 
 
 const AllowedSignals = [
@@ -14,57 +16,68 @@ const AllowedSignals = [
   "Launching on Coinbase Pro"
 ]
 
-export class EarlyBuyBot {
-  constructor(gate: GateClient, socket: WebsocketConnection) {
-    this.gate = gate
-    this.socket = socket
-    console.log('Listening for new assets announcements...')
-    console.log
-    console.log('')
 
-    new CLI(this)
+function initializeLogsDirectory() {
+  const logsAbsPath = createPath(getProjectRootDir(), config.logsPath)
+  Console.log('Initializing LOGS directory...', logsAbsPath)
 
-    this.socket.subscribe('message', (event) => {
+  // create directory if doe snot exist
+  if (!fs.existsSync(logsAbsPath)) {
+    try { fs.mkdirSync(logsAbsPath) }
+    catch (e) { /** DO NOTHING */ }
+  }
+  if (!fs.existsSync(logsAbsPath)) {
+    throw new Error(`Cannot create LOGS directory`)
+  }
+
+  // empty directory 
+  if (config.cleanLogsPathOnStart) {
+    Console.log('Cleaning LOGS directory...')
+    clearDir(logsAbsPath)
+  }
+}
+
+
+class TradingBotService {
+  async start() {
+    Console.log('🟢 Initializing Bot')
+    initializeLogsDirectory()
+
+    Console.log('Listening for new assets announcements...')
+
+
+    Socket.subscribe('message', (event) => {
       const { message } = event.detail
       if (typeof message === 'string') {
         const isSupportedSignal: boolean = AllowedSignals.some(i => message.toLowerCase().includes(i.toLowerCase()))
         if (!isSupportedSignal) return
         const announcement = getSymbolsFromMessage(message)
         if (!announcement) return
-        console.log('MESSAGE :', message)
-        console.log('SYMBOLS :', announcement.symbols)
+        Console.log('MESSAGE :', message)
+        Console.log('SYMBOLS :', announcement.symbols)
         for (const symbol of announcement.symbols) {
           const assetPair: AssetPair = `${symbol}_USDT`
           // Block if asset is not available or is not tradeable
-          if (!this.gate.assetPairs[assetPair]) continue
-          if (!this.gate.assetPairs[assetPair].tradeStatus) continue
+          if (!Gate.assetPairs[assetPair]) continue
+          if (!Gate.assetPairs[assetPair].tradeStatus) continue
           else {
             this.createOperation(symbol).catch(e => { throw e })
             break
           }
         }
-      } else console.log('Unknown message from WS', message)
+      } else Console.log('Unknown message from WS', message)
     })
   }
 
-
-  gate: GateClient
-  socket: WebsocketConnection
   operations: Record<string, Operation> = {}
   isCreatingAnotherOperation: boolean = false
 
 
-  static async create(socket: WebsocketConnection, gate: GateClient): Promise<EarlyBuyBot> {
-    console.log('🟢 Initializing Bot')
-    return new EarlyBuyBot(gate, socket)
-  }
-
-
   public async createOperation(symbol: SymbolName): Promise<void> {
-    console.log(`New asset announced: ${symbol}`)
+    Console.log(`New asset announced: ${symbol}`)
 
     if (this.isCreatingAnotherOperation) {
-      console.log('Busy creating another operation. Ignoring announcement...')
+      Console.log('Busy creating another operation. Ignoring announcement...')
       return
     }
 
@@ -78,7 +91,7 @@ export class EarlyBuyBot {
      */
     const assetPair: AssetPair = `${symbol}_USDT`
     if (this.operations[assetPair]) {
-      console.log(`There is another ongoing Operation for ${assetPair}. Ignoring announcement...`)
+      Console.log(`There is another ongoing Operation for ${assetPair}. Ignoring announcement...`)
       this.isCreatingAnotherOperation = false
       return
     }
@@ -89,7 +102,7 @@ export class EarlyBuyBot {
      * 
      */
     if (Object.keys(this.operations).length === config.operation.maxSimultaneousOperations) {
-      console.log('Max simultaneous operations limit reached. Ignoring announcement...')
+      Console.log('Max simultaneous operations limit reached. Ignoring announcement...')
       this.isCreatingAnotherOperation = false
       return
     }
@@ -101,10 +114,10 @@ export class EarlyBuyBot {
      */
     let operation: Operation
     try {
-      console.log(`Creating operation for ${assetPair}...`)
-      operation = await Operation.create(this.gate, symbol)
+      Console.log(`Creating operation for ${assetPair}...`)
+      operation = await Operation.create(symbol)
     } catch (e) {
-      console.log(`ERROR creating operation ${assetPair} :`, this.gate.getGateResponseError(e))
+      Console.log(`ERROR creating operation ${assetPair} :`, Gate.getGateResponseError(e))
       this.isCreatingAnotherOperation = false
       return
     }
@@ -115,11 +128,11 @@ export class EarlyBuyBot {
      * Handle OPERATION events
      */
     operation.subscribe('operationStarted', () => {
-      console.log(`Operation ${operation.id} started! (${assetPair}`)
+      Console.log(`Operation ${operation.id} started! (${assetPair}`)
     })
 
     operation.subscribe('operationFinished', (event) => {
-      console.log(`Operation ${operation.id} ended! (${assetPair}`)
+      Console.log(`Operation ${operation.id} ended! (${assetPair}`)
       delete this.operations[event.detail.operation.id]
     })
 
@@ -133,3 +146,5 @@ export class EarlyBuyBot {
 
 }
 
+
+export const TradingBot = new TradingBotService()

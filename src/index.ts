@@ -1,17 +1,18 @@
 import WebsocketConnection from './lib/websocket'
-import { GateClient } from './lib/gate-client'
+import { Gate } from './service/gate-client'
 import { config } from './config'
-import { EarlyBuyBot } from './bot'
-import { handleSignalInterrupt } from './lib/sigint'
+import { TradingBot } from './service/bot'
 import { validateConfig } from './config/validate-config'
-import fs from 'fs'
-import { clearDir, createPath, getProjectRootDir } from './lib/file'
-// import { ui } from './ui'
-
-console.clear()
+import { UI, ui } from './ui'
+import { Console } from './service/console'
+import { Socket } from './service/socket'
+import { CLI } from './service/cli'
+import { GateMonitor } from './service/gate-monitor'
+import { OperationsMonitor } from './service/operations-monitor'
 
 
 process.on('uncaughtException', function err(e) {
+  ui.screen.destroy()
   console.log('CAPTURAT!')
   console.log(e.message)
   //console.log('DETAILS')
@@ -23,79 +24,19 @@ process.on('uncaughtException', function err(e) {
 })
 
 
-function createWebsocket(): Promise<WebsocketConnection> {
-  let isInitialized = false
-
-  return new Promise(resolve => {
-    console.log('🟢 Initializing Websocket...')
-    let startTime: number
-
-    const socket = new WebsocketConnection({
-      host: config.socketAddr,
-      reconnectOnDisconnection: true,
-      reconnectOnDisconnectionDelay: 2000,
-      logger: (msg: any): void => console.log(msg)
-    })
-
-    socket.subscribe('message', (event) => {
-      console.log(event.detail.message)
-      const message = event.detail.message
-      if (message === 'raul not in whitelist. Contact @ftor1 in telegram.') {
-        void socket.reconnect()
-        return
-      }
-      // PONG message looks like :  "pong {timestamp}"
-      const isPongMessage = typeof message === 'string' && message.split(' ')[0] === 'pong'
-      if (isPongMessage) {
-        const elapsed = Math.round((Date.now() - startTime) / 2)
-        console.log('Websocket latency', elapsed, 'ms (single way)')
-        console.log()
-        if (!isInitialized) resolve(socket)
-        else isInitialized = true
-        event.stopPropagation()
-      }
-    })
-
-    socket.subscribe('connect', () => {
-      startTime = Date.now()
-      socket.send('ping')
-    })
-
-    socket.connect()
-  })
-
-}
-
-function initializeLogsDirectory() {
-  const logsAbsPath = createPath(getProjectRootDir(), config.logsPath)
-  console.log('Initializing LOGS directory...', logsAbsPath)
-
-  // create directory if doe snot exist
-  if (!fs.existsSync(logsAbsPath)) {
-    try { fs.mkdirSync(logsAbsPath) }
-    catch (e) { /** DO NOTHING */ }
-  }
-  if (!fs.existsSync(logsAbsPath)) {
-    throw new Error(`Cannot create LOGS directory`)
-  }
-
-  // empty directory 
-  if (config.cleanLogsPathOnStart) {
-    console.log('Cleaning LOGS directory...')
-    clearDir(logsAbsPath)
-  }
-}
-
 async function init(): Promise<void> {
   try {
-    handleSignalInterrupt()
     validateConfig()
-    initializeLogsDirectory()
-    const socket: WebsocketConnection = await createWebsocket()
-    const gate: GateClient = await GateClient.create(config.gate.key, config.gate.secret)
-    await EarlyBuyBot.create(socket, gate)
+    const ui = new UI()
+    await Console.start(ui.console)
+    await Socket.start()
+    await Gate.start()
+    await TradingBot.start()
+    await CLI.start()
+    await GateMonitor.start(ui.balance)
+    await OperationsMonitor.start(ui.operation)
   } catch (e) {
-    console.log('Error during initialization', (e as any)?.message)
+    ui.console.print('Error during initialization', (e as any)?.message)
   }
 }
 

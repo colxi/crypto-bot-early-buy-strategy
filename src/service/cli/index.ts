@@ -1,9 +1,11 @@
 import { config } from '@/config'
 import { clearDir, createPath, getProjectRootDir } from '@/lib/file'
-import { AssetPair } from '@/lib/gate-client/types'
-import readline from 'readline'
-import { EarlyBuyBot } from '..'
-import { OperationEndReason } from '../operation/types'
+import { Gate } from '@/service/gate-client'
+import { AssetPair } from '@/service/gate-client/types'
+import { ui } from '@/ui'
+import { Console } from '../console'
+import { TradingBot } from '../bot'
+import { OperationEndReason } from '../bot/operation/types'
 
 const commandsDictionary = [
   { command: 'q', name: 'Quit', usage: 'q' },
@@ -26,30 +28,22 @@ function isValidCommand(command: string): command is Command {
 }
 
 
-export class CLI {
-  constructor(bot: EarlyBuyBot) {
-    this.bot = bot
-    this.promptInterface = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    })
-    this.promptInterface.resume()
-    this.promptInterface.on("SIGINT", () => { this.commandQuit().catch((e) => { throw e }) })
-    this.prompt()
+class CLIService {
+  async start() {
+    this.initPrompt().catch(e => { throw e })
   }
 
-  promptInterface: readline.Interface
-  bot: EarlyBuyBot
-
-  private prompt() {
-    this.promptInterface.question('> ', (message) => {
-      this.interpreter(message)
-        .then(() => this.prompt())
-        .catch(e => console.log(e))
-    })
+  async initPrompt() {
+    while (true) {
+      const message = await ui.inputBox.prompt()
+      await this.interpreter(message)
+    }
   }
+
+  // promptInterface: readline.Interface
 
   private async interpreter(input: string) {
+    if (!input.trim()) return
     const [command, ...params] = input.split(' ')
     const parameters = params.join(' ')
 
@@ -66,11 +60,9 @@ export class CLI {
       gap: async () => { await this.getAssetPrice(parameters) },
     }
 
+    Console.log('> ', input)
     if (isValidCommand(command)) await handlers[command](parameters)
-    else {
-      console.log('Unknown command', command)
-      console.log()
-    }
+    else Console.log('Unknown command: ', command)
   }
 
 
@@ -81,19 +73,19 @@ export class CLI {
    *----------------------------------------------------------------------------------------------*/
 
   async commandQuit() {
-    console.log('PRESS CTRL+C again to exit')
-    console.log('')
+    Console.log('PRESS CTRL+C again to exit')
+    Console.log('')
     process.kill(process.pid, 'SIGTERM')
   }
 
 
   async commandCls() {
-    console.clear()
+    Console.clear()
   }
 
 
   async commandHelp() {
-    console.log('List of available commands...')
+    Console.log('List of available commands...')
 
     const columnsWidth = [10, 30, 0]
 
@@ -101,82 +93,85 @@ export class CLI {
     const colT2 = 'NAME'.padEnd(columnsWidth[1], ' ')
     const colT3 = 'USAGE'
     const titles = `${colT1} ${colT2} ${colT3}`
-    console.log()
-    console.log(titles)
-    console.log(''.padEnd(titles.length, '-'))
+    Console.log()
+    Console.log(titles)
+    Console.log(''.padEnd(titles.length, '-'))
 
     commandsDictionary.forEach((i) => {
       const col1 = i.command.padEnd(columnsWidth[0], ' ')
       const col2 = i.name.padEnd(columnsWidth[1], ' ')
       const col3 = i.usage
-      console.log(`${col1} ${col2} ${col3}`)
+      Console.log(`${col1} ${col2} ${col3}`)
     })
-    console.log('')
+    Console.log('')
   }
 
 
   async commandOperationList() {
-    console.log('Listing active Operations...')
-    const activeOperations = Object.values(this.bot.operations)
-    if (!activeOperations.length) console.log('There are no active operations')
-    else activeOperations.forEach(i => console.log(` ID: ${i.id} | ASSET PAIR: ${i.assetPair} | AMOUNT : ${i.amount}`))
-    console.log('')
+    Console.log('Listing active Operations...')
+    const activeOperations = Object.values(TradingBot.operations)
+    if (!activeOperations.length) Console.log('There are no active operations')
+    else activeOperations.forEach(i => Console.log(` ID: ${i.id} | ASSET PAIR: ${i.assetPair}`))
+    Console.log('')
   }
 
 
   async commandOperationInfo(params: string) {
     const [operationID] = params.split(' ')
-    const operation = this.bot.operations[operationID]
-    if (!operation) console.log(`Operation (${operationID}) not found.`)
+    const operation = TradingBot.operations[operationID]
+    if (!operation) Console.log(`Operation (${operationID}) not found.`)
     else {
-      console.log('Operation details...')
-      console.log(operation)
+      Console.log('Operation details...')
+      Console.log(operation)
     }
-    console.log('')
+    Console.log('')
   }
 
 
   async commandOperationKill(params: string) {
     const [operationID,] = params.split(' ')
-    const operation = this.bot.operations[operationID]
-    if (!operation) console.log(`Operation (${operationID}) not found.`)
+    const operation = TradingBot.operations[operationID]
+    if (!operation) Console.log(`Operation (${operationID}) not found.`)
     else {
-      console.log('Killing operation...')
+      Console.log('Killing operation...')
       await operation.finish(OperationEndReason.ERROR, new Error('Operation KILL requested by user'))
     }
-    console.log('')
+    Console.log('')
   }
 
   async commandOperationCreate(params: string) {
     const [assetSymbol] = params.split(' ')
-    if (!assetSymbol) console.log('Please provide a valid symbol (eg: BTC, ETH, ...).')
+    if (!assetSymbol) Console.log('Please provide a valid symbol (eg: BTC, ETH, ...).')
     else {
-      console.log('Creating operation...')
-      await this.bot.createOperation(assetSymbol.toUpperCase())
+      Console.log('Creating operation...')
+      await TradingBot.createOperation(assetSymbol.toUpperCase())
     }
-    console.log('')
+    Console.log('')
   }
 
   async commandGateAvailableBalance() {
-    console.log('Checking Gate Available USDT balance...')
-    const balance = await this.bot.gate.geAvailableBalanceUSDT()
-    console.log(balance, 'USDT')
-    console.log('')
+    Console.log('Checking Gate Available USDT balance...')
+    const balance = await Gate.geAvailableBalanceUSDT()
+    Console.log(balance, 'USDT')
+    Console.log('')
   }
 
   async commandLogsRemove() {
-    console.log('Removing all logs...')
+    Console.log('Removing all logs...')
     const logsAbsPath = createPath(getProjectRootDir(), config.logsPath)
     clearDir(logsAbsPath)
-    console.log('Done!')
-    console.log('')
+    Console.log('Done!')
+    Console.log('')
   }
 
   async getAssetPrice(params: string) {
-    console.log('Getting Asset price...')
+    Console.log('Getting Asset price...')
     const assetPair: AssetPair = `${params.toUpperCase()}_USDT`
-    const price = await this.bot.gate.getAssetPairPrice(assetPair)
-    console.log(`${assetPair} ${price} USDT`)
-    console.log('')
+    const price = await Gate.getAssetPairPrice(assetPair)
+    Console.log(`${assetPair} ${price} USDT`)
+    Console.log('')
   }
 }
+
+
+export const CLI = new CLIService()

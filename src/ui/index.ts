@@ -1,95 +1,74 @@
 import blessed from 'blessed'
+import { Balance } from './balance'
+import { ConsoleUI } from './console'
+import { InputBox } from './inpputBox'
+import { Operations } from './operation'
 
-class UI {
+export class UI {
   constructor() {
-    const screen = blessed.screen({
+    this.screen = blessed.screen({
       // autoPadding: false,
       // warnings: true,
-      // smartCSR: true,
       // fastCSR: true,
       // useBCE: true,
+      //  fullUnicode: true,
       smartCSR: true,
-      resizeTimeout: 500,
-      dockBorders: true,
+      // resizeTimeout: 500,
+      // dockBorders: true,
+
     })
 
-
     this.layout = blessed.layout({
-      parent: screen,
+      layout: 'grid',
       top: 'top',
       left: 'left',
       width: '100%',
       height: '100%',
-      // border: 'line',
-      style: {
-        bg: 'red',
-        border: {
-          fg: 'blue'
-        }
-      }
-    } as any)
+    })
 
-
-    this.leftColumn = blessed.scrollablebox({
-      parent: this.layout,
-      left: 0,
-      width: '50%',
+    const leftColumn = blessed.box({
+      width: '60%',
       height: '100%',
-      border: 'line',
-      scrollbar: {
-        bg: 'blue'
-      } as any,
+      left: '0%',
+      scrollable: false,
     })
-    this.rightColumn = blessed.box({
-      parent: this.layout,
-      width: '50%',
-      left: '50%',
+
+    const rightColumn = blessed.box({
+      layout: 'inline',
+      width: '40%',
       height: '100%',
-      border: 'line',
-      scrollbar: {
-        bg: 'blue'
-      } as any,
+      left: '60%',
+      scrollable: false,
     })
 
-    const prompt = blessed.prompt({
-      left: '0',
-      bottom: '0',
-      height: 'shrink',
-      width: '100%',
-      border: 'line',
-      style: {
-        // fg: 'blue',
-        // bg: 'black',
-        bold: true,
+    // LAYOUT
+    this.screen.append(this.layout)
+    this.layout.append(leftColumn)
+    this.layout.append(rightColumn)
 
-      }
-    })
+    // LEFT 
+    this.inputBox = new InputBox(this)
+    this.console = new ConsoleUI(this)
+    leftColumn.append(this.inputBox.element)
+    leftColumn.append(this.console.element)
 
-    this.leftColumn.append(prompt)
+    // RIGHT
+    this.balance = new Balance(this)
+    this.operation = new Operations(this)
+    rightColumn.append(this.balance.element)
+    rightColumn.append(this.operation.element)
 
-    this.leftColumn.key(['q', 'C-c'], function quit() {
-      return process.exit(0)
-    })
+    this.screen.render()
 
-    prompt.input('Search:', 'test', (a: Error, value: string) => {
-      this.printLeft('aaaaaa')
-      this.printLeft(value)
-      //
-    })
-
-    screen.render()
   }
 
+  public inputBox: InputBox
+  public console: ConsoleUI
+  public balance: Balance
+  public operation: Operations
+
+  public screen: blessed.Widgets.Screen
   public layout: blessed.Widgets.LayoutElement
-  public leftColumn: blessed.Widgets.BoxElement
-  public rightColumn: blessed.Widgets.BoxElement
-  public leftColumnData: string[] = []
-
-  public printLeft(content: unknown) {
-    this.leftColumnData.push(String(content))
-    this.leftColumnData.splice(0, this.leftColumnData.length - Number(this.leftColumn.height))
-    this.leftColumn.setText(this.leftColumnData.join('\n'))
-  }
 }
 
 export const ui = new UI()

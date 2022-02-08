@@ -1,10 +1,10 @@
-import { GateClient } from '@/lib/gate-client'
-import { AssetPair, GateOrderId, TriggeredOrderStatus } from '@/lib/gate-client/types'
+import { AssetPair, GateOrderId, TriggeredOrderStatus } from '@/service/gate-client/types'
 import { Order } from 'gate-api'
 import { OperationError } from '../operation-error'
 import { OperationErrorCode } from '../operation-error/types'
-import { OperationLogger } from '../operation-logger'
+import { Logger } from '../../../../lib/logger'
 import { OperationTriggeredOrderType } from '../types'
+import { Gate } from '@/service/gate-client'
 
 export const TriggeredOrderErrorStatusList = [
   TriggeredOrderStatus.Canceled,
@@ -16,9 +16,8 @@ export const TriggeredOrderErrorStatusList = [
 export async function hasFulfilledTriggeredOrder(
   orderTpe: OperationTriggeredOrderType,
   triggeredOrderId: GateOrderId,
-  gate: GateClient,
   assetPair: AssetPair,
-  logger: OperationLogger
+  logger: Logger
 ): Promise<boolean> {
   /**
    * 
@@ -26,7 +25,7 @@ export async function hasFulfilledTriggeredOrder(
    * 
    */
   try {
-    const triggeredOrder = await gate.getTriggeredOrderDetails(triggeredOrderId)
+    const triggeredOrder = await Gate.getTriggeredOrderDetails(triggeredOrderId)
     const triggeredOrderStatus = triggeredOrder.status
     const isErrorStatus = TriggeredOrderErrorStatusList.includes(triggeredOrder.status)
 
@@ -45,7 +44,7 @@ export async function hasFulfilledTriggeredOrder(
        * 
        */
       const limitOrderId = triggeredOrder.fired_order_id!
-      const limitOrderStatus = await gate.getOrderStatus(limitOrderId, assetPair)
+      const limitOrderStatus = await Gate.getOrderStatus(limitOrderId, assetPair)
       // If LIMIT order has error status...
       if (limitOrderStatus === Order.Status.Cancelled) {
         throw new OperationError(`${orderTpe} LIMIT order has Error status: ${limitOrderStatus}`, {
@@ -57,7 +56,7 @@ export async function hasFulfilledTriggeredOrder(
       else if (limitOrderStatus === Order.Status.Closed) return true
     }
   } catch (e) {
-    logger.error('Error tracking order', gate.getGateResponseError(e))
+    logger.error('Error tracking order', Gate.getGateResponseError(e))
     throw e
   }
   return false

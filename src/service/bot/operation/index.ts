@@ -1,24 +1,30 @@
 import { config } from '@/config'
 import { Order } from 'gate-api'
-import { GateClient } from '../../lib/gate-client'
-import { getDateAsDDMMYYYY, getTimeAsHHMMSS } from '../../lib/date'
-import EventedService from '../../lib/evented-service'
+import { getDateAsDDMMYYYY, getTimeAsHHMMSS } from '../../../lib/date'
+import EventedService from '../../../lib/evented-service'
 import {
   AssetPair,
-  GateNewTriggeredOrderDetails,
   GateOrderDetails,
   SymbolName,
   Timestamp,
-} from '@/lib/gate-client/types'
-import { OperationEndReason, OperationTriggeredOrderType, ServiceEvents } from './types'
+} from '@/service/gate-client/types'
+import {
+  OperationBuyOrderDetails,
+  OperationEndReason,
+  OperationTriggeredOrderDetails,
+  OperationTriggeredOrderType,
+  ServiceEvents
+} from './types'
 import { OperationError } from './operation-error'
-import { OperationLogger as OperationLogger } from './operation-logger'
+import { Logger as Logger } from '../../../lib/logger'
 import { createBuyOrder } from './create-buy-order'
 import { createTakeProfitTriggeredOrder } from './create-take-profit-triggered-order'
 import { createStopLossTriggeredOrder } from './create-stop-loss-triggered-order.ts'
 import { createEmergencySellOrder } from './create-emergency-sell-order'
 import { hasFulfilledTriggeredOrder } from './has-fulfilled-triggered-order'
 import { sendEmail } from '../send-email'
+import { Gate } from '@/service/gate-client'
+import { Console } from '@/service/console'
 
 let lastOperationId: number = 0
 
@@ -28,26 +34,23 @@ enum OperationStatus {
 }
 export class Operation extends EventedService<ServiceEvents> {
   private constructor(
-    gate: GateClient,
     symbol: SymbolName,
-    buyOrder: GateOrderDetails,
-    amount: string,
+    buyOrderDetails: OperationBuyOrderDetails,
     startTime: number,
-    logger: OperationLogger
+    logger: Logger
   ) {
     super(['operationStarted', 'operationFinished'])
 
     this.id = lastOperationId++
-    this.gate = gate
     this.symbol = symbol
     this.assetPair = `${symbol}_USDT`
+    this.lastAssetPairPrice = Number(buyOrderDetails.originalAssetPrice)
     this.startTime = startTime
     this.logger = logger
-    this.amount = amount
-    this.buyOrder = buyOrder
+    this.buyOrderDetails = buyOrderDetails
     this.emergencySellOrder = null
-    this.takeProfitTriggeredOrder = null
-    this.stopLossTriggeredOrder = null
+    this.takeProfitTriggeredOrderDetails = null
+    this.stopLossTriggeredOrderDetails = null
     this.operationStatus = OperationStatus.ACTIVE
 
     this.createTriggeredOrders().catch((e) => { throw e })
@@ -55,21 +58,26 @@ export class Operation extends EventedService<ServiceEvents> {
     this.dispatchEvent('operationStarted', { operation: this })
   }
 
+  // INTERNALS
+  private operationStatus: OperationStatus
+  private readonly logger: Logger
 
+  // OPERATION META
   public readonly id: number
+  public readonly startTime: Timestamp
   public readonly assetPair: AssetPair
   public readonly symbol: SymbolName
-  public readonly amount: string
-  public readonly startTime: Timestamp
-  private readonly logger: OperationLogger
-  private readonly gate: GateClient
+  public lastAssetPairPrice: number
+
+  // TIMERS
   private priceTrackingTimer: NodeJS.Timeout | undefined
   private operationTrackingTimer: NodeJS.Timeout | undefined
-  private buyOrder: GateOrderDetails
-  private takeProfitTriggeredOrder: GateNewTriggeredOrderDetails | null
-  private stopLossTriggeredOrder: GateNewTriggeredOrderDetails | null
+
+  // ORDERS
   private emergencySellOrder: GateOrderDetails | null
-  private operationStatus: OperationStatus
+  private takeProfitTriggeredOrderDetails: OperationTriggeredOrderDetails | null
+  private stopLossTriggeredOrderDetails: OperationTriggeredOrderDetails | null
+  private buyOrderDetails: OperationBuyOrderDetails
 
 
   /*------------------------------------------------------------------------------------------------
@@ -81,19 +89,19 @@ export class Operation extends EventedService<ServiceEvents> {
    * ----------------------------------------------------------------------------------------------*/
 
 
-  public static async create(gate: GateClient, symbol: SymbolName): Promise<Operation> {
+  public static async create(symbol: SymbolName): Promise<Operation> {
     const startTime = Date.now()
     const assetPair: AssetPair = `${symbol}_USDT`
     const logFilename = `${getDateAsDDMMYYYY(startTime)}_${getTimeAsHHMMSS(startTime, '.')}_${symbol}`
-    const logger = new OperationLogger(logFilename)
+    const logger = new Logger(logFilename)
 
     logger.log(`New operation : ${assetPair}`)
     logger.log(`Operation start time: ${getDateAsDDMMYYYY(startTime)} ${getTimeAsHHMMSS(startTime)}`)
 
     while (true) {
       try {
-        const { order, amount } = await createBuyOrder(gate, symbol, assetPair, startTime, logger)
-        return new Operation(gate, symbol, order, amount, startTime, logger)
+        const buyOrderDetails = await createBuyOrder(symbol, assetPair, startTime, logger)
+        return new Operation(symbol, buyOrderDetails, startTime, logger)
       }
       catch (e) {
         const elapsed = Date.now() - startTime
@@ -108,12 +116,18 @@ export class Operation extends EventedService<ServiceEvents> {
       ? [END_REASON, Error]
       : [END_REASON]
   ): Promise<void> {
-    this.operationStatus = OperationStatus.FINISHED
+
+    if (this.operationStatus === OperationStatus.FINISHED) {
+      this.logger.error('OPERATION ALREADY FINISHED, CANNOT FINISH AN OPERATION TWICE')
+    } else this.operationStatus = OperationStatus.FINISHED
 
     this.logger.lineBreak()
     this.logger.log(`Finishing Operation due to ${endingReason}...`)
 
-    await this.stopOperationTracking()
+    this.logger.warning('Stopping Operation tracking')
+    clearInterval(this.priceTrackingTimer!)
+    clearInterval(this.operationTrackingTimer!)
+
     await this.cancelRemainingOperationOrders()
 
     if (endingReason === OperationEndReason.ERROR) await this.handleOperationError(error)
@@ -122,6 +136,7 @@ export class Operation extends EventedService<ServiceEvents> {
     this.logger.log('- Operation finished')
     this.dispatchEvent('operationFinished', { operation: this, reason: endingReason })
   }
+
 
   async handleOperationError(e: unknown) {
     const error: Error = e instanceof Error ? e : new Error(String(e))
@@ -148,7 +163,7 @@ export class Operation extends EventedService<ServiceEvents> {
         }
       } catch (e) {
         this.logger.error(' - EMERGENCY SELL order creation failed!')
-        this.logger.error(` - ERROR DETAILS : ${this.gate.getGateResponseError(e)}`)
+        this.logger.error(` - ERROR DETAILS : ${Gate.getGateResponseError(e)}`)
       }
       attemptCounter++
       currentPercentModifier += config.emergencySell.retryPercentModifier
@@ -180,26 +195,24 @@ export class Operation extends EventedService<ServiceEvents> {
 
 
   private async createTakeProfitTriggeredOrder(): Promise<void> {
-    this.takeProfitTriggeredOrder = await createTakeProfitTriggeredOrder(
-      this.gate,
+    this.takeProfitTriggeredOrderDetails = await createTakeProfitTriggeredOrder(
       this.symbol,
       this.assetPair,
       this.startTime,
-      this.buyOrder.price,
-      this.amount,
+      this.buyOrderDetails.buyPrice,
+      this.buyOrderDetails.amount,
       this.logger
     )
   }
 
 
   private async createStopLossTriggeredOrder(): Promise<void> {
-    this.stopLossTriggeredOrder = await createStopLossTriggeredOrder(
-      this.gate,
+    this.stopLossTriggeredOrderDetails = await createStopLossTriggeredOrder(
       this.symbol,
       this.assetPair,
       this.startTime,
-      this.buyOrder.price,
-      this.amount,
+      this.buyOrderDetails.buyPrice,
+      this.buyOrderDetails.amount,
       this.logger
     )
   }
@@ -207,12 +220,11 @@ export class Operation extends EventedService<ServiceEvents> {
 
   private async createEmergencySellOrder(modifier: number = 0): Promise<void> {
     this.emergencySellOrder = await createEmergencySellOrder(
-      this.gate,
       this.symbol,
       this.assetPair,
       this.startTime,
-      this.buyOrder.price,
-      this.amount,
+      this.buyOrderDetails.buyPrice,
+      this.buyOrderDetails.amount,
       this.logger,
       modifier
     )
@@ -221,7 +233,7 @@ export class Operation extends EventedService<ServiceEvents> {
   private async cancelRemainingOperationOrders(): Promise<void> {
     //  Purge TAKE PROFIT order
     try {
-      await this.gate.purgeTriggeredOrder(this.takeProfitTriggeredOrder!.id, this.assetPair)
+      await Gate.purgeTriggeredOrder(this.takeProfitTriggeredOrderDetails!.id, this.assetPair)
     } catch (e) {
       const status = (e as any)?.response?.status
       if (status !== 400) this.logger.error('Error purging TAKE PROFIT TRIGGERED order')
@@ -229,7 +241,7 @@ export class Operation extends EventedService<ServiceEvents> {
 
     //  Purge STOP LOSS order
     try {
-      await this.gate.purgeTriggeredOrder(this.stopLossTriggeredOrder!.id, this.assetPair)
+      await Gate.purgeTriggeredOrder(this.stopLossTriggeredOrderDetails!.id, this.assetPair)
     } catch (e) {
       const status = (e as any)?.response?.status
       if (status !== 400) this.logger.error('Error purging STOP LOSS TRIGGERED order')
@@ -248,20 +260,13 @@ export class Operation extends EventedService<ServiceEvents> {
 
   private startContextTracking() {
     this.operationTrackingTimer = setInterval(
-      () => { this.trackOperationOrders().catch(() => console.log('Failure on "trackOperationOrders"')) },
+      () => { this.trackOperationOrders().catch(() => Console.log('Failure on "trackOperationOrders"')) },
       config.operation.orderTrackingIntervalInMillis
     )
     this.priceTrackingTimer = setInterval(
-      () => { this.trackAssetPairPrice().catch(() => console.log('Failure on "trackAssetPairPrice"')) },
+      () => { this.trackAssetPairPrice().catch(() => Console.log('Failure on "trackAssetPairPrice"')) },
       config.operation.priceTrackingIntervalInMillis
     )
-  }
-
-
-  private async stopOperationTracking() {
-    this.logger.warning('Stopping Operation tracking')
-    clearInterval(this.priceTrackingTimer!)
-    clearInterval(this.operationTrackingTimer!)
   }
 
 
@@ -269,12 +274,13 @@ export class Operation extends EventedService<ServiceEvents> {
     if (this.operationStatus === OperationStatus.FINISHED) return
 
     // Track only when all orders have been placed
-    if (!this.takeProfitTriggeredOrder || !this.stopLossTriggeredOrder) return
+    if (!this.takeProfitTriggeredOrderDetails || !this.stopLossTriggeredOrderDetails) return
     try {
-      const assetPairPrice = await this.gate.getAssetPairPrice(this.assetPair)
+      const assetPairPrice = await Gate.getAssetPairPrice(this.assetPair)
+      this.lastAssetPairPrice = assetPairPrice
       this.logger.info(this.assetPair, 'AssetPair Price : ', assetPairPrice)
     } catch (e) {
-      this.logger.error('Error tracking assetPairPrice', this.buyOrder.id, this.gate.getGateResponseError(e))
+      this.logger.error('Error tracking assetPairPrice', this.buyOrderDetails.id, Gate.getGateResponseError(e))
     }
   }
 
@@ -283,13 +289,12 @@ export class Operation extends EventedService<ServiceEvents> {
     if (this.operationStatus === OperationStatus.FINISHED) return
 
     // Track only when all orders have been placed
-    if (!this.takeProfitTriggeredOrder || !this.stopLossTriggeredOrder) return
+    if (!this.takeProfitTriggeredOrderDetails || !this.stopLossTriggeredOrderDetails) return
 
     try {
       const isTakeProfitOrderFulfilled = await hasFulfilledTriggeredOrder(
         OperationTriggeredOrderType.TAKE_PROFIT,
-        this.takeProfitTriggeredOrder.id,
-        this.gate,
+        this.takeProfitTriggeredOrderDetails.id,
         this.assetPair,
         this.logger
       )
@@ -304,8 +309,7 @@ export class Operation extends EventedService<ServiceEvents> {
     try {
       const isStopLossOrderFulfilled = await hasFulfilledTriggeredOrder(
         OperationTriggeredOrderType.STOP_LOSS,
-        this.stopLossTriggeredOrder.id,
-        this.gate,
+        this.stopLossTriggeredOrderDetails.id,
         this.assetPair,
         this.logger
       )
