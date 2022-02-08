@@ -40,16 +40,18 @@ export async function createEmergencySellOrder(
    * Calculate amounts and sizes
    * 
    */
+  const amountMinusFees = applyPercentage(Number(amountToSell), config.gate.feesPercent * -1)
+  const currencyPrecision = Gate.assetPairs[assetPair].amountPrecision!
+  const sellAmount = toFixed(amountMinusFees, currencyPrecision)
   const usdtPrecision = Gate.assetPairs[assetPair].precision!
-  const effectivePercentage = config.emergencySell.sellDistancePercent - modifier
-  Console.log('effectivePercentage', effectivePercentage, 'modifier', modifier)
+  const effectivePercentage = config.emergencySell.sellDistancePercent + modifier
   const sellPrice = toFixed(
     applyPercentage(assetPairPrice, effectivePercentage),
     usdtPrecision
   )
 
   logger.log(` - Current ${symbol} price:`, assetPairPrice, 'USDT')
-  logger.log(' - Sell amount :', Number(amountToSell), symbol)
+  logger.log(' - Sell amount :', Number(sellAmount), symbol, '(buyAmmount - fee)')
   logger.log(' - Sell price :', Number(sellPrice), `USDT (assetPrice - ${Math.abs(effectivePercentage)}%)`)
 
   /**
@@ -62,17 +64,14 @@ export async function createEmergencySellOrder(
     const { response } = await Gate.spot.createOrder({
       currencyPair: assetPair,
       side: Order.Side.Sell,
-      amount: amountToSell,
+      amount: sellAmount,
       price: sellPrice,
       // TODO : check if IoC would work here
-      timeInForce: Order.TimeInForce.Ioc
+      timeInForce: Order.TimeInForce.Fok
     })
     order = response.data
   } catch (e) {
-    throw new OperationError(
-      `Error when trying to execute EMERGENCY SELL order "${assetPair}"`,
-      { code: OperationErrorCode.ERROR_CREATING_EMERGENCY_SELL_ORDER, details: Gate.getGateResponseError(e) }
-    )
+    throw e
   }
 
   /**
