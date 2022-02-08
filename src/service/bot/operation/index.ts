@@ -167,7 +167,7 @@ export class Operation extends EventedService<ServiceEvents> {
       }
       attemptCounter++
       currentPercentModifier += config.emergencySell.retryPercentModifier
-      if (currentPercentModifier > config.emergencySell.retryPercentModifierLimit) {
+      if (currentPercentModifier < config.emergencySell.retryPercentModifierLimit) {
         currentPercentModifier = config.emergencySell.retryPercentModifierLimit
       }
     }
