@@ -79,7 +79,7 @@ class GateService {
     return await geAvailableBalanceUSDT(this.spot)
   }
 
-  public async getOrderStatus(
+  public async getLimitOrderStatus(
     orderId: GateOrderId,
     assetPair: AssetPair,
     account = 'spot'
@@ -87,6 +87,16 @@ class GateService {
     const { response } = await this.spot.getOrder(orderId, assetPair, { account })
     const order: GateOrderDetails = response.data
     return order.status
+  }
+
+  public async getLimitOrder(
+    orderId: GateOrderId,
+    assetPair: AssetPair,
+    account = 'spot'
+  ): Promise<Order> {
+    const { response } = await this.spot.getOrder(orderId, assetPair, { account })
+    const order: Order = response.data
+    return order
   }
 
   public async getTriggeredOrderDetails(

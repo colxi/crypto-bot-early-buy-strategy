@@ -55,7 +55,6 @@ export async function createBuyOrder(
   const buyPrice = toFixed(applyPercentage(assetPairPrice, config.buy.buyDistancePercent), usdtPrecision)
   const buyAmount = toFixed(operationBudget / Number(buyPrice), currencyPrecision)
   const operationCost = Number(toFixed(Number(buyAmount) * Number(buyPrice), usdtPrecision))
-  const effectiveAmount = toFixed(applyPercentage(Number(buyAmount), config.gate.feesPercent * -1), currencyPrecision)
 
   logger.lineBreak()
   logger.log('Creating BUY order...')
@@ -63,7 +62,6 @@ export async function createBuyOrder(
   logger.log(' - Buy amount :', Number(buyAmount), symbol)
   logger.log(' - Buy price :', Number(buyPrice), `USDT (currentPrice + ${config.buy.buyDistancePercent}%)`)
   logger.log(' - Operation cost :', operationCost, `USDT (budget: ${operationBudget} USDT )`)
-  logger.log(' - Effective amount', effectiveAmount, `(buyAmount - fees)`)
 
   /**
    * 
@@ -102,6 +100,7 @@ export async function createBuyOrder(
     throw new OperationError(errorMessage, { code: OperationErrorCode.ERROR_CREATING_BUY_ORDER, details: Gate.getGateResponseError(e) })
   }
 
+
   /**
    * 
    * BLOCK if order has not been fulfilled 
@@ -113,6 +112,8 @@ export async function createBuyOrder(
     throw new OperationError(errorMessage, { code: OperationErrorCode.BUY_ORDER_NOT_EXECUTED, status: order.status })
   }
 
+  const effectiveAmount = toFixed(Number(order.amount) - Number(order.fee), currencyPrecision)
+
   /**
    * 
    * Ready!
@@ -120,15 +121,15 @@ export async function createBuyOrder(
    */
   logger.success(' - Ready!')
   logger.log(' - Buy order ID :', order.id)
+  logger.log(' - Effective amount', effectiveAmount, symbol, `(buyAmount - fees)`)
   logger.log(' - Time since trade start :', Date.now() - startTime, 'ms')
 
   return {
     id: order.id,
     originalAssetPrice: String(assetPairPrice),
     buyPrice: order.price,
-    amount: order.amount,
+    amount: effectiveAmount,
     operationCost: String(operationCost),
     order: order
   }
-
 }

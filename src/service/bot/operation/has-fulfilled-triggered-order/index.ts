@@ -14,7 +14,7 @@ export const TriggeredOrderErrorStatusList = [
 
 
 export async function hasFulfilledTriggeredOrder(
-  orderTpe: OperationTriggeredOrderType,
+  orderType: OperationTriggeredOrderType,
   triggeredOrderId: GateOrderId,
   assetPair: AssetPair,
   logger: Logger
@@ -29,9 +29,11 @@ export async function hasFulfilledTriggeredOrder(
     const triggeredOrderStatus = triggeredOrder.status
     const isErrorStatus = TriggeredOrderErrorStatusList.includes(triggeredOrder.status)
 
+    logger.log('Tracking Triggered order', orderType, 'status:', triggeredOrder.status, 'reason:', triggeredOrder.reason)
+
     // If TRIGGERED order has error status....
     if (isErrorStatus) {
-      throw new OperationError(`${orderTpe} TRIGGERED order has Error status: ${triggeredOrderStatus}`, {
+      throw new OperationError(`${orderType} TRIGGERED order has Error status: ${triggeredOrderStatus}`, {
         code: OperationErrorCode.TRIGGERED_ORDER_HAS_ERROR_STATUS,
         status: triggeredOrderStatus
       })
@@ -44,10 +46,22 @@ export async function hasFulfilledTriggeredOrder(
        * 
        */
       const limitOrderId = triggeredOrder.fired_order_id!
-      const limitOrderStatus = await Gate.getOrderStatus(limitOrderId, assetPair)
+      const limitOrder = await Gate.getLimitOrder(limitOrderId, assetPair)
+      const limitOrderStatus = limitOrder.status
+
+      logger.log('Tracking Triggered Limit order', orderType, 'status:', limitOrder.status, 'left:', limitOrder.left)
+
+      if (Number(limitOrder.left) > 0) {
+        logger.error('!!!!! DETECTED TRIGGERED LIMIT ORDER WITH LEFT AMOUNT !!!!', limitOrder.left)
+        throw new OperationError(`${orderType} LIMIT order has LEFT AMOUNT`, {
+          code: OperationErrorCode.LIMIT_ORDER_HAS_LEFT_AMOUNT,
+          left: limitOrder.left
+        })
+      }
+
       // If LIMIT order has error status...
       if (limitOrderStatus === Order.Status.Cancelled) {
-        throw new OperationError(`${orderTpe} LIMIT order has Error status: ${limitOrderStatus}`, {
+        throw new OperationError(`${orderType} LIMIT order has Error status: ${limitOrderStatus}`, {
           code: OperationErrorCode.LIMIT_ORDER_HAS_ERROR_STATUS,
           status: limitOrderStatus
         })

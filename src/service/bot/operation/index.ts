@@ -126,7 +126,11 @@ export class Operation extends EventedService<ServiceEvents> {
 
     this.logger.warning('Stopping Operation tracking')
     clearInterval(this.priceTrackingTimer!)
+    clearTimeout(this.priceTrackingTimer!)
+
     clearInterval(this.operationTrackingTimer!)
+    clearTimeout(this.operationTrackingTimer!)
+
 
     await this.cancelRemainingOperationOrders()
 
@@ -257,8 +261,13 @@ export class Operation extends EventedService<ServiceEvents> {
   * 
   * ----------------------------------------------------------------------------------------------*/
 
+  private isTracking: boolean = false
 
   private startContextTracking() {
+    // prevent several tracking calls to be executed in parallel 
+    if (this.isTracking) return
+    this.isTracking = true
+
     this.operationTrackingTimer = setInterval(
       () => { this.trackOperationOrders().catch(() => Console.log('Failure on "trackOperationOrders"')) },
       config.operation.orderTrackingIntervalInMillis
@@ -267,6 +276,8 @@ export class Operation extends EventedService<ServiceEvents> {
       () => { this.trackAssetPairPrice().catch(() => Console.log('Failure on "trackAssetPairPrice"')) },
       config.operation.priceTrackingIntervalInMillis
     )
+
+    this.isTracking = false
   }
 
 
@@ -304,6 +315,7 @@ export class Operation extends EventedService<ServiceEvents> {
       }
     } catch (e) {
       await this.finish(OperationEndReason.ERROR, e as Error)
+      return
     }
 
     try {
@@ -319,6 +331,7 @@ export class Operation extends EventedService<ServiceEvents> {
       }
     } catch (e) {
       await this.finish(OperationEndReason.ERROR, e as Error)
+      return
     }
   }
 }

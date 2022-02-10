@@ -1,20 +1,12 @@
 import { config } from '@/config'
 import { AssetPair, SymbolName } from '../gate-client/types'
-import { getSymbolsFromMessage } from './message-process'
 import { Operation } from './operation'
 import { clearDir, createPath, getProjectRootDir } from '@/lib/file'
 import fs from 'fs'
 import { Socket } from '@/service/socket'
 import { Console } from '@/service/console'
 import { Gate } from '@/service/gate-client'
-
-
-const AllowedSignals = [
-  "Binance Will List",
-  "자산 추가",
-  "Coinbase Pro available",
-  "Launching on Coinbase Pro"
-]
+import { parseWebsocketSignal } from './signal-parser'
 
 
 function initializeLogsDirectory() {
@@ -46,14 +38,14 @@ class TradingBotService {
     Console.log('Listening for new assets announcements...')
 
 
-    Socket.subscribe('message', (event) => {
+    Socket.subscribe('message', async (event) => {
       const { message } = event.detail
       if (typeof message === 'string') {
-        const isSupportedSignal: boolean = AllowedSignals.some(i => message.toLowerCase().includes(i.toLowerCase()))
-        if (!isSupportedSignal) return
-        const announcement = getSymbolsFromMessage(message)
+        const announcement = parseWebsocketSignal(message)
         if (!announcement) return
+        Console.log('---------')
         Console.log('MESSAGE :', message)
+        Console.log('EXCHANGE :', announcement.exchange)
         Console.log('SYMBOLS :', announcement.symbols)
         for (const symbol of announcement.symbols) {
           const assetPair: AssetPair = `${symbol}_USDT`
@@ -61,7 +53,8 @@ class TradingBotService {
           if (!Gate.assetPairs[assetPair]) continue
           if (!Gate.assetPairs[assetPair].tradeStatus) continue
           else {
-            this.createOperation(symbol).catch(e => { throw e })
+            await this.createOperation(symbol)
+            // BLOCK! only open first symbol...for now
             break
           }
         }
@@ -132,6 +125,7 @@ class TradingBotService {
     })
 
     operation.subscribe('operationFinished', (event) => {
+      Console.log('Finish reason : ', event.detail.reason)
       Console.log(`Operation ${operation.id} ended! (${assetPair}`)
       delete this.operations[event.detail.operation.id]
     })
