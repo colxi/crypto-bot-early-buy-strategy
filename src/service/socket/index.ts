@@ -4,7 +4,7 @@ import WebsocketConnection, { WebsocketMessageEvent } from '@/lib/websocket'
 import { Console } from '../console'
 
 export type ServiceEvents = {
-  message: (event: WebsocketMessageEvent) => void
+  message: (event: WebsocketMessageEvent) => Promise<void>
 }
 
 class SocketService extends EventedService<ServiceEvents>{
@@ -30,7 +30,6 @@ class SocketService extends EventedService<ServiceEvents>{
 
       this.connection.subscribe('message', (event) => {
         const message = event.detail.message
-        Console.log('SOCKET: ', message)
         // PONG message looks like :  "pong {timestamp}"
         const isPongMessage = typeof message === 'string' && message.split(' ')[0] === 'pong'
         if (isPongMessage) {

@@ -53,6 +53,7 @@ export interface GateTriggeredOrderDetails {
   ctime: number
   fired_order_id: undefined | GateOrderId
   status: TriggeredOrderStatus
+  reason: string
 }
 
 export interface GateOrderDetails {
@@ -68,6 +69,7 @@ export interface GateOrderDetails {
   account: 'spot' | 'margin'
   side: Order.Side
   amount: string
+  fee: string,
   price: string
   time_in_force: Order.TimeInForce
   iceberg: string

@@ -44,7 +44,10 @@ export async function createEmergencySellOrder(
   const currencyPrecision = Gate.assetPairs[assetPair].amountPrecision!
   const sellAmount = toFixed(amountMinusFees, currencyPrecision)
   const usdtPrecision = Gate.assetPairs[assetPair].precision!
+  logger.log(' - Sell distance percent :', config.emergencySell.sellDistancePercent)
+  logger.log(' - Sell price modifier :', modifier)
   const effectivePercentage = config.emergencySell.sellDistancePercent + modifier
+  Console.log('effectivePercentage', effectivePercentage, 'modifier', modifier)
   const sellPrice = toFixed(
     applyPercentage(assetPairPrice, effectivePercentage),
     usdtPrecision
