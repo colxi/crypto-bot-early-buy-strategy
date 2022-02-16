@@ -150,9 +150,9 @@ export class Operation extends EventedService<ServiceEvents> {
     this.logger.error(` - Operation ERROR : ${error?.message}`)
     if (isKnownError) this.logger.error(` - Operation ERROR Data:`, JSON.stringify(error.data))
 
-    try {
-      await sendEmail('EMERGENCY SELL order required.')
-    } catch (e) { this.logger.error('Error sending EMERGENCY SELL email', e) }
+    // try {
+    //   await sendEmail('EMERGENCY SELL order required.')
+    // } catch (e) { this.logger.error('Error sending EMERGENCY SELL email', e) }
 
     let attemptCounter = 0
     let currentPercentModifier = 0
