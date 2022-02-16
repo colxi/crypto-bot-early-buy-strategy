@@ -131,10 +131,9 @@ export class Operation extends EventedService<ServiceEvents> {
     clearInterval(this.operationTrackingTimer!)
     clearTimeout(this.operationTrackingTimer!)
 
+    if (endingReason === OperationEndReason.ERROR) await this.handleOperationError(error)
 
     await this.cancelRemainingOperationOrders()
-
-    if (endingReason === OperationEndReason.ERROR) await this.handleOperationError(error)
 
     this.logger.lineBreak()
     this.logger.log('- Operation finished')

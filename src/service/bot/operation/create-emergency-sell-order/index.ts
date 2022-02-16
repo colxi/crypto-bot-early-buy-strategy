@@ -62,20 +62,15 @@ export async function createEmergencySellOrder(
    * Create EMERGENCY SELL order
    * 
    */
-  let order: GateOrderDetails
-  try {
-    const { response } = await Gate.spot.createOrder({
-      currencyPair: assetPair,
-      side: Order.Side.Sell,
-      amount: sellAmount,
-      price: sellPrice,
-      // TODO : check if IoC would work here
-      timeInForce: Order.TimeInForce.Fok
-    })
-    order = response.data
-  } catch (e) {
-    throw e
-  }
+  const { response } = await Gate.spot.createOrder({
+    currencyPair: assetPair,
+    side: Order.Side.Sell,
+    amount: sellAmount,
+    price: sellPrice,
+    // TODO : check if IoC would work here
+    timeInForce: Order.TimeInForce.Fok
+  })
+  const order: GateOrderDetails = response.data
 
   /**
    * 
