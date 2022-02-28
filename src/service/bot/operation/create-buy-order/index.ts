@@ -121,9 +121,9 @@ export async function createBuyOrder(
    */
   logger.success(' - Ready!')
   logger.log(' - Buy order ID :', order.id)
-  logger.log(' - Effective amount', effectiveAmount, symbol, `(buyAmount - fees)`)
-  logger.log(' - Fill price :', order.fill_price)
-  logger.log(' - Fill total :', (order as any).filled_total)
+  logger.log(' - Effective currency amount', effectiveAmount, symbol, `(buyAmount - fees)`)
+  logger.log(' - Effective assert price  :', order.fill_price, 'USDT')
+  logger.log(' - Effective buy price :', toFixed(Number(order.fill_price) / Number(order.amount), currencyPrecision), 'USDT')
   logger.log(' - Time since trade start :', Date.now() - startTime, 'ms')
 
   const aa = Date.now()
