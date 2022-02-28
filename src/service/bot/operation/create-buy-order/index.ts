@@ -122,6 +122,7 @@ export async function createBuyOrder(
   logger.success(' - Ready!')
   logger.log(' - Buy order ID :', order.id)
   logger.log(' - Effective amount', effectiveAmount, symbol, `(buyAmount - fees)`)
+  logger.log(' - Effective buy Price (Fill_price) :', order.fill_price)
   logger.log(' - Time since trade start :', Date.now() - startTime, 'ms')
 
   return {
