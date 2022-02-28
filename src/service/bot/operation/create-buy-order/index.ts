@@ -126,6 +126,12 @@ export async function createBuyOrder(
   logger.log(' - Fill total :', (order as any).filled_total)
   logger.log(' - Time since trade start :', Date.now() - startTime, 'ms')
 
+  const aa = Date.now()
+  const result = await Gate.getLimitOrder(order.id, assetPair)
+  logger.log('Order details')
+  logger.log(result)
+  logger.log('Fetch order details elapsed time =', Date.now() - aa)
+
   return {
     id: order.id,
     originalAssetPrice: String(assetPairPrice),
