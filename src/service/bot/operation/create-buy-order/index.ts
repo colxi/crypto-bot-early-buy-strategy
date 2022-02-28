@@ -113,6 +113,7 @@ export async function createBuyOrder(
   }
 
   const effectiveAmount = toFixed(Number(order.amount) - Number(order.fee), currencyPrecision)
+  const effectivePrice = toFixed(Number(order.fill_price) / Number(order.amount), currencyPrecision)
 
   /**
    * 
@@ -121,21 +122,14 @@ export async function createBuyOrder(
    */
   logger.success(' - Ready!')
   logger.log(' - Buy order ID :', order.id)
-  logger.log(' - Effective currency amount', effectiveAmount, symbol, `(buyAmount - fees)`)
-  logger.log(' - Effective assert price  :', order.fill_price, 'USDT')
-  logger.log(' - Effective buy price :', toFixed(Number(order.fill_price) / Number(order.amount), currencyPrecision), 'USDT')
+  logger.log(' - Effective amount', effectiveAmount, symbol, `(buyAmount - fees)`)
+  logger.log(' - Effective buy price :', effectivePrice, 'USDT')
   logger.log(' - Time since trade start :', Date.now() - startTime, 'ms')
-
-  const aa = Date.now()
-  const result = await Gate.getLimitOrder(order.id, assetPair)
-  logger.log('Order details')
-  logger.log(result)
-  logger.log('Fetch order details elapsed time =', Date.now() - aa)
 
   return {
     id: order.id,
     originalAssetPrice: String(assetPairPrice),
-    buyPrice: order.price,
+    buyPrice: effectivePrice,
     amount: effectiveAmount,
     operationCost: String(operationCost),
     order: order
