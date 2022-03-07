@@ -28,7 +28,8 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
     wss.on('connection', (ws) => {
       console.log('client connected!')
       ws.on('message', (event: SignalsHubMessageEvent) => {
-        this.dispatchEvent('message', event.detail)
+        console.log(event)
+        // this.dispatchEvent('message', event.detail)
       })
     })
   }
