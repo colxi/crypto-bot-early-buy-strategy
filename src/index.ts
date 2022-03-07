@@ -26,22 +26,22 @@ import { SignalsHub } from './service/signals-hub/indes'
 
 
 async function init(): Promise<void> {
+
   SignalsHub.start()
   SignalsHub.subscribe('message', async (event) => {
     const data = event.detail
     console.log('message LAG:', Date.now() - data.timestamp)
-    console.log(event)
+    console.log(data.assetName)
   })
-
-  // return
-  // try {
-  //   validateConfig()
-  //   const ui = new UI()
-  //   await Console.start(ui.console)
-  //   await Socket.start()
-  //   await Gate.start()
-  //   await TradingBot.start()
-  //   await CLI.start()
+ 
+  try {
+    validateConfig()
+    const ui = new UI()
+    await Console.start(ui.console)
+    await Socket.start()
+    await Gate.start()
+    await TradingBot.start()
+    await CLI.start()
   //   await GateMonitor.start(ui.balance)
   //   await OperationsMonitor.start(ui.operation)
   // } catch (e) {

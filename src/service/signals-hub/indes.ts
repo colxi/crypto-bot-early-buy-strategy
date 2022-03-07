@@ -35,7 +35,7 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
         try {
           data = JSON.parse(message)
         } catch (e) {
-          console.log('error parsing message')
+          console.log('error parsing message:', message)
           return
         }
         this.dispatchEvent('message', data)
