@@ -24,7 +24,7 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
   start() {
     const wss = new WebSocket.Server({ port: 9898 })
     this.server = wss
-
+    console.log('starting signal hub')
     wss.on('connection', (ws) => {
       console.log('client connected!')
       ws.on('message', (data: any) => {
