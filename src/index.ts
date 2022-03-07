@@ -1,3 +1,4 @@
+import { SignalsHub } from './service/signals-hub/indes'
 import WebsocketConnection from './lib/websocket'
 import { Gate } from './service/gate-client'
 import { config } from './config'
@@ -25,6 +26,13 @@ process.on('uncaughtException', function err(e) {
 
 
 async function init(): Promise<void> {
+  SignalsHub.start()
+  SignalsHub.subscribe('message', async (event) => {
+    console.log('message LAG:', Date.now() - event.timeStamp)
+    console.log(event)
+  })
+
+  return
   try {
     validateConfig()
     const ui = new UI()
