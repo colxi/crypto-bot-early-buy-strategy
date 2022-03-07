@@ -41,8 +41,13 @@ class TradingBotService {
     SignalsHub.start()
     SignalsHub.subscribe('message', async (event) => {
       const data = event.detail
-      console.log('message LAG:', Date.now() - data.timestamp)
-      let symbol = (data.assetName)
+      Console.log('--------------')
+      Console.log('Message type:', data.type)
+      Console.log('Message from:', data.serverName)
+      Console.log('Message asset:', data.assetName)
+      Console.log('Message LAG:', Date.now() - data.timestamp)
+      Console.log('--------------')
+      const symbol = data.assetName
       const assetPair: AssetPair = `${symbol}_USDT`
       // Block if asset is not available or is not tradeable
       if (!Gate.assetPairs[assetPair]) return
@@ -53,14 +58,13 @@ class TradingBotService {
     })
 
     Socket.subscribe('message', async (event) => {
-      
       const { message } = event.detail
-      if(true===true) return
-      
+
       if (typeof message === 'string') {
         const announcement = parseWebsocketSignal(message)
         if (!announcement) return
         Console.log('---------')
+        Console.log('EXCHANGE ANNOUNCEMENT :', message)
         Console.log('MESSAGE :', message)
         Console.log('EXCHANGE :', announcement.exchange)
         Console.log('SYMBOLS :', announcement.symbols)

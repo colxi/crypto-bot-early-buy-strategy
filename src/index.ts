@@ -18,17 +18,14 @@ process.on('uncaughtException', function err(e) {
   console.log(e.message)
   //console.log('DETAILS')
   //console.log((e as any).detail )
-//   //console.log((e as any).details )
-//   //console.log('RESPONSE')
-//   //console.log((e as any).response )
+  //console.log((e as any).details )
+  //console.log('RESPONSE')
+  //console.log((e as any).response )
   process.exit()
 })
 
 
 async function init(): Promise<void> {
-
-
- 
   try {
     validateConfig()
     const ui = new UI()
@@ -37,10 +34,10 @@ async function init(): Promise<void> {
     await Gate.start()
     await TradingBot.start()
     await CLI.start()
-     await GateMonitor.start(ui.balance)
-     await OperationsMonitor.start(ui.operation)
+    await GateMonitor.start(ui.balance)
+    await OperationsMonitor.start(ui.operation)
   } catch (e) {
-     ui.console.print('Error during initialization', (e as any)?.message)
+    ui.console.print('Error during initialization', (e as any)?.message)
   }
 }
 

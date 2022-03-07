@@ -1,6 +1,7 @@
 import EventedService from '@/lib/evented-service'
 import { CustomEvent } from '@/lib/evented-service/custom-event'
 import WebSocket from 'ws'
+import { Console } from '../console'
 
 export class SignalsHubMessageEvent extends CustomEvent<{
   assetName: string
@@ -35,7 +36,7 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
         try {
           data = JSON.parse(message)
         } catch (e) {
-          console.log('error parsing message:', message)
+          Console.log('Error parsing message:', message)
           return
         }
         this.dispatchEvent('message', data)
@@ -45,6 +46,7 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
 
   stop() {
     this.server?.close()
+    this.server = null
   }
 }
 
