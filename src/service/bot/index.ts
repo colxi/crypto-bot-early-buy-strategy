@@ -7,6 +7,7 @@ import { Socket } from '@/service/socket'
 import { Console } from '@/service/console'
 import { Gate } from '@/service/gate-client'
 import { parseWebsocketSignal } from './signal-parser'
+import { SignalsHub } from '../signals-hub/indes'
 
 
 function initializeLogsDirectory() {
@@ -37,9 +38,25 @@ class TradingBotService {
 
     Console.log('Listening for new assets announcements...')
 
+    SignalsHub.start()
+    SignalsHub.subscribe('message', async (event) => {
+      const data = event.detail
+      console.log('message LAG:', Date.now() - data.timestamp)
+      let symbol = (data.assetName)
+      const assetPair: AssetPair = `${symbol}_USDT`
+      // Block if asset is not available or is not tradeable
+      if (!Gate.assetPairs[assetPair]) return
+      if (!Gate.assetPairs[assetPair].tradeStatus) return
+      else {
+        await this.createOperation(symbol)
+      }
+    })
 
     Socket.subscribe('message', async (event) => {
+      
       const { message } = event.detail
+      if(true===true) return
+      
       if (typeof message === 'string') {
         const announcement = parseWebsocketSignal(message)
         if (!announcement) return
