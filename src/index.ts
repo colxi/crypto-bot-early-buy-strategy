@@ -28,7 +28,8 @@ import { SignalsHub } from './service/signals-hub/indes'
 async function init(): Promise<void> {
   SignalsHub.start()
   SignalsHub.subscribe('message', async (event) => {
-    console.log('message LAG:', Date.now() - event.timeStamp)
+    const data = event.detail
+    console.log('message LAG:', Date.now() - data.timestamp)
     console.log(event)
   })
 

@@ -3,8 +3,11 @@ import { CustomEvent } from '@/lib/evented-service/custom-event'
 import WebSocket from 'ws'
 
 export class SignalsHubMessageEvent extends CustomEvent<{
-  assetName: string,
-  type: 'PUMP',
+  assetName: string
+  type: 'PUMP'
+  timestamp: number
+  exchange: string
+  serverName: string
 }>{ }
 
 
@@ -27,9 +30,15 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
     console.log('starting signal hub')
     wss.on('connection', (ws) => {
       console.log('client connected!')
-      ws.on('message', (event: SignalsHubMessageEvent) => {
-        console.log(event)
-        // this.dispatchEvent('message', event.detail)
+      ws.on('message', (message: string) => {
+        let data
+        try {
+          data = JSON.parse(message)
+        } catch (e) {
+          console.log('error parsing message')
+          return
+        }
+        this.dispatchEvent('message', data)
       })
     })
   }
