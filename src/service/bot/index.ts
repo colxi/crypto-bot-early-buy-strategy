@@ -49,17 +49,22 @@ class TradingBotService {
       Console.log('--------------')
       const symbol = data.assetName
       const assetPair: AssetPair = `${symbol}_USDT`
+
       // Block if asset is not available or is not tradeable
-      if (!Gate.assetPairs[assetPair]) return
-      if (!Gate.assetPairs[assetPair].tradeStatus) return
-      else {
-        await this.createOperation(symbol)
+      if (!Gate.assetPairs[assetPair]) {
+        Console.log(`Symbol ${data.assetName} not found on Gate.io.Ignoring signal`)
+        return
       }
+      if (!Gate.assetPairs[assetPair].tradeStatus) {
+        Console.log(`Symbol ${data.assetName} found on Gate.io but is not tradeable. Ignoring signal`)
+        return
+      }
+
+      await this.createOperation(symbol)
     })
 
     Socket.subscribe('message', async (event) => {
       const { message } = event.detail
-
       if (typeof message === 'string') {
         const announcement = parseWebsocketSignal(message)
         if (!announcement) return
