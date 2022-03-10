@@ -5,7 +5,7 @@ import { Console } from '../console'
 
 export class SignalsHubMessageEvent extends CustomEvent<{
   assetName: string
-  type: 'PUMP'
+  type: 'PUMP' | 'TEST'
   timestamp: number
   exchange: string
   serverName: string

@@ -41,6 +41,11 @@ class TradingBotService {
     SignalsHub.start()
     SignalsHub.subscribe('message', async (event) => {
       const data = event.detail
+      if (typeof data !== 'object') {
+        Console.log(`Unknown message received`, data)
+        return
+      }
+
       Console.log('--------------')
       Console.log('Message type:', data.type)
       Console.log('Message from:', data.serverName)
@@ -57,6 +62,11 @@ class TradingBotService {
       }
       if (!Gate.assetPairs[assetPair].tradeStatus) {
         Console.log(`Symbol ${data.assetName} found on Gate.io but is not tradeable. Ignoring signal`)
+        return
+      }
+
+      if (data.type === 'TEST') {
+        Console.log(`Testing message detected. Ignoring`)
         return
       }
 
