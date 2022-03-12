@@ -40,7 +40,6 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
 
       ws.on('message', (message: string) => {
         let data
-        Console.log(' message in:', message)
         try {
           data = JSON.parse(message)
         } catch (e) {
