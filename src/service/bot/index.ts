@@ -39,7 +39,8 @@ class TradingBotService {
     Console.log('Listening for new assets announcements...')
 
     SignalsHub.start()
-    SignalsHub.subscribe('connection', (event) => {
+
+    SignalsHub.subscribe('connection', async (event) => {
       const address = event.detail.address
       Console.log('[SIGNALS_HUB] : New connection', address)
     })

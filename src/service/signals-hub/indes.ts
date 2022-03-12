@@ -33,6 +33,7 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
     const wss = new WebSocket.Server({ port: 9898 })
     this.server = wss
     console.log('starting signal hub')
+
     wss.on('connection', (ws, req) => {
       this.dispatchEvent('connection', { address: req.socket.remoteAddress || 'UNKNOWN_ADDRESS' })
       console.log('client connected!')
