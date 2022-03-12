@@ -12,17 +12,12 @@ import { GateMonitor } from './service/gate-monitor'
 import { OperationsMonitor } from './service/operations-monitor'
 
 
-process.on('uncaughtException', function err(e) {
-  // ui.screen.destroy()
-  Console.log('FATAL ERROR, please restart the bot!')
-  Console.log(e.message)
-  //console.log('DETAILS')
-  //console.log((e as any).detail )
-  //console.log((e as any).details )
-  //console.log('RESPONSE')
-  //console.log((e as any).response )
-  // process.exit()
-})
+// process.on('uncaughtException', function err(e) {
+//   // ui.screen.destroy()
+//   Console.log('FATAL ERROR, please restart the bot!')
+//   Console.log(e.message)
+//   process.exit()
+// })
 
 
 async function init(): Promise<void> {

@@ -34,9 +34,9 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
     this.server = wss
 
     wss.on('connection', (ws, req) => {
-      this.dispatchEvent('connection', {
-        address: req.socket.remoteAddress || 'UNKNOWN_ADDRESS'
-      })
+      // this.dispatchEvent('connection', {
+      //   address: req.socket.remoteAddress || 'UNKNOWN_ADDRESS'
+      // })
 
       ws.on('message', (message: string) => {
         let data
