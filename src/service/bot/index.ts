@@ -40,12 +40,10 @@ class TradingBotService {
 
     SignalsHub.start()
 
-    // SignalsHub.subscribe('connection', async (event) => {
-    //   Console.log('[SIGNALS_HUB] : connection!', event)
-    //   return
-    //   const address = event.detail.address
-    //   Console.log('[SIGNALS_HUB] : New connection', address)
-    // })
+    SignalsHub.subscribe('connection', async (event) => {
+      const address = event.detail.address
+      Console.log('[SIGNALS_HUB] : New connection', address)
+    })
 
     SignalsHub.subscribe('message', async (event) => {
       const data = event.detail

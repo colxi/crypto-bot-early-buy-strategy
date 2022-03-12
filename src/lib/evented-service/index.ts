@@ -41,7 +41,9 @@ export default class EventedService<
       : [E_NAME, Parameters<E_DICTIONARY[E_NAME]>[0] extends CustomEvent<infer T> ? T : never]
   ) {
     const event = new CustomEvent(eventName as string, { detail: eventData })
-    for (const eventHandler of this.#subscribers[eventName]) {
+    const handlers = this.#subscribers[eventName]
+    if (!handlers) throw new Error(`Event "${eventName}" has not been declared during initialization!`)
+    for (const eventHandler of handlers) {
       eventHandler(event)
       // stop Event Propagation if requested by user
       if (event.cancelBubble) break
@@ -57,7 +59,9 @@ export default class EventedService<
     eventName: E_NAME,
     eventHandler: E_HANDLER
   ): void {
-    this.#subscribers[eventName].add(eventHandler)
+    const handlers = this.#subscribers[eventName]
+    if (!handlers) throw new Error(`Event "${eventName}" has not been declared during initialization!`)
+    handlers.add(eventHandler)
   }
 
 
@@ -68,6 +72,8 @@ export default class EventedService<
     eventName: E_NAME,
     eventHandler: E_HANDLER
   ): void {
-    this.#subscribers[eventName].delete(eventHandler)
+    const handlers = this.#subscribers[eventName]
+    if (!handlers) throw new Error(`Event "${eventName}" has not been declared during initialization!`)
+    handlers.delete(eventHandler)
   }
 }
