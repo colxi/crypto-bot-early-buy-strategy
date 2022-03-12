@@ -50,7 +50,8 @@ class TradingBotService {
       Console.log('Message type:', data.type)
       Console.log('Message from:', data.serverName)
       Console.log('Message asset:', data.assetName)
-      Console.log('Message LAG:', Date.now() - data.timestamp)
+      Console.log('Detection LAG:', Date.now() - data.messageTime)
+      Console.log('Sending LAG:', Date.now() - data.sendTime)
       Console.log('--------------')
       const symbol = data.assetName
       const assetPair: AssetPair = `${symbol}_USDT`

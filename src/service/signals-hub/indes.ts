@@ -6,7 +6,8 @@ import { Console } from '../console'
 export class SignalsHubMessageEvent extends CustomEvent<{
   assetName: string
   type: 'PUMP' | 'TEST'
-  timestamp: number
+  messageTime: number
+  sendTime: number
   exchange: string
   serverName: string
 }>{ }
@@ -20,7 +21,6 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
   constructor() {
     super(['message'])
     this.server = null
-
   }
 
   server: WebSocket.Server | null
