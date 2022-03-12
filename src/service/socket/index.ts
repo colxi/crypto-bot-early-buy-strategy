@@ -18,7 +18,7 @@ class SocketService extends EventedService<ServiceEvents>{
     let isInitialized = false
 
     return new Promise(resolve => {
-      Console.log('🟢 Initializing Websocket...')
+      Console.log('Initializing Websocket...')
       let startTime: number
 
       this.connection = new WebsocketConnection({
