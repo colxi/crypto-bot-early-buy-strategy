@@ -11,10 +11,14 @@ export class SignalsHubMessageEvent extends CustomEvent<{
   exchange: string
   serverName: string
 }>{ }
+export class SignalsHubConnectionEvent extends CustomEvent<{
+  address: string
+}>{ }
 
 
 type ServiceEvents = {
   message: (event: SignalsHubMessageEvent) => Promise<void>
+  connection: (event: SignalsHubConnectionEvent) => Promise<void>
 }
 
 export class SignalsHubService extends EventedService<ServiceEvents>{
@@ -29,7 +33,8 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
     const wss = new WebSocket.Server({ port: 9898 })
     this.server = wss
     console.log('starting signal hub')
-    wss.on('connection', (ws) => {
+    wss.on('connection', (ws, req) => {
+      this.dispatchEvent('connection', { address: req.socket.remoteAddress || 'UNKNOWN_ADDRESS' })
       console.log('client connected!')
       ws.on('message', (message: string) => {
         let data

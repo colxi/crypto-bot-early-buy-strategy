@@ -39,35 +39,40 @@ class TradingBotService {
     Console.log('Listening for new assets announcements...')
 
     SignalsHub.start()
+    SignalsHub.subscribe('connection', (event) => {
+      const address = event.detail.address
+      Console.log('[SIGNALS_HUB] : New connection', address)
+    })
+
     SignalsHub.subscribe('message', async (event) => {
       const data = event.detail
       if (typeof data !== 'object') {
-        Console.log(`Unknown message received`, data)
+        Console.log(`[SIGNALS_HUB] Unknown message received`, data)
         return
       }
 
       Console.log('--------------')
-      Console.log('Message type:', data.type)
-      Console.log('Message from:', data.serverName)
-      Console.log('Message asset:', data.assetName)
-      Console.log('Detection LAG:', Date.now() - data.messageTime)
-      Console.log('Sending LAG:', Date.now() - data.sendTime)
+      Console.log('[SIGNALS_HUB] Message type:', data.type)
+      Console.log('[SIGNALS_HUB] Message from:', data.serverName)
+      Console.log('[SIGNALS_HUB] Message asset:', data.assetName)
+      Console.log('[SIGNALS_HUB] Detection LAG:', Date.now() - data.messageTime)
+      Console.log('[SIGNALS_HUB] Sending LAG:', Date.now() - data.sendTime)
       Console.log('--------------')
       const symbol = data.assetName
       const assetPair: AssetPair = `${symbol}_USDT`
 
       // Block if asset is not available or is not tradeable
       if (!Gate.assetPairs[assetPair]) {
-        Console.log(`Symbol ${data.assetName} not found on Gate.io.Ignoring signal`)
+        Console.log(`[SIGNALS_HUB]  Symbol ${data.assetName} not found on Gate.io.Ignoring signal`)
         return
       }
       if (!Gate.assetPairs[assetPair].tradeStatus) {
-        Console.log(`Symbol ${data.assetName} found on Gate.io but is not tradeable. Ignoring signal`)
+        Console.log(`[SIGNALS_HUB]  Symbol ${data.assetName} found on Gate.io but is not tradeable. Ignoring signal`)
         return
       }
 
       if (data.type === 'TEST') {
-        Console.log(`Testing message detected. Ignoring`)
+        Console.log(`[SIGNALS_HUB]  Testing message detected. Ignoring`)
         return
       }
 
