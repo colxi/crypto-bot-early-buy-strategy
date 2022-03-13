@@ -1,3 +1,4 @@
+import { config } from '@/config'
 import EventedService from '@/lib/evented-service'
 import { CustomEvent } from '@/lib/evented-service/custom-event'
 import WebSocket from 'ws'
@@ -11,6 +12,7 @@ export class SignalsHubMessageEvent extends CustomEvent<{
   sendTime: number
   exchange: string
   serverName: string
+  authToken: string
 }>{ }
 export class SignalsHubConnectionEvent extends CustomEvent<{
   address: string
@@ -28,31 +30,79 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
     this.server = null
   }
 
-  server: WebSocket.Server | null
 
-  async start() {
-    const wss = new WebSocket.Server({ port: 9898 })
-    this.server = wss
+  private server: WebSocket.Server | null
 
-    wss.on('connection', (ws, req) => {
+
+  /**
+   * 
+   * Handle incoming message 
+   * 
+   */
+  private onClientMessage(message: string) {
+    let data: SignalsHubMessageEvent['detail']
+    try {
+      data = JSON.parse(message)
+      if (typeof data !== 'object') throw new Error('Invalid message received')
+      if (this.isValidMessage(data)) throw new Error('Invalid message received')
+    } catch (e) {
+      Console.log('[SIGNAL-HUB] Error parsing incoming message:')
+      Console.log('[SIGNAL-HUB]', message)
+      return
+    }
+
+    if (data.authToken !== config.signalHub.authToken) {
+      Console.log('[SIGNAL-HUB] Invalid auth token found in message', data.authToken)
+      return
+    }
+
+    this.dispatchEvent('message', data)
+  }
+
+
+  /**
+   * 
+   * Validate incoming message schema
+   * 
+   */
+  private isValidMessage(data: Record<string, any>) {
+    if (!data.assetName) return false
+    if (!data.exchange) return false
+    if (!data.messageTime) return false
+    if (!data.sendTime) return false
+    if (!data.serverName) return false
+    if (!data.type) return false
+    if (!data.authToken) return false
+    return true
+  }
+
+
+  /**
+   * 
+   * Start Service 
+   * 
+   */
+  public async start() {
+    Console.log('[SIGNAL-HUB] Starting Signal Hub...')
+    this.server = new WebSocket.Server({ port: config.signalHub.port })
+    /** Handle new connections */
+    this.server.on('connection', (ws, message) => {
       this.dispatchEvent('connection', {
-        address: req.socket?.remoteAddress || 'UNKNOWN_ADDRESS'
+        address: message.socket?.remoteAddress || 'UNKNOWN_ADDRESS'
       })
-
-      ws.on('message', (message: string) => {
-        let data
-        try {
-          data = JSON.parse(message)
-        } catch (e) {
-          Console.log('Error parsing message:', message)
-          return
-        }
-        this.dispatchEvent('message', data)
-      })
+      /** Handle client messages */
+      ws.on('message', (message: string) => this.onClientMessage(message))
     })
   }
 
-  async stop() {
+
+  /**
+   * 
+   * Stop Service 
+   * 
+   * */
+  public async stop() {
+    Console.log('[SIGNAL-HUB] Stopping Signal Hub...')
     this.server?.close()
     this.server = null
   }

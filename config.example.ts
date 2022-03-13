@@ -1,56 +1,49 @@
 import { BotConfig } from '@/config/types'
+import { TimeInSeconds } from './src/lib/date'
 
 export const config: BotConfig = {
-  socketAddr: 'ws://ADDRESS:IP',
   logsPath: 'operation-logs',
   cleanLogsPathOnStart: false,
+  signalHub: {
+    port: 9898,
+    authToken: '__TOKEN__'
+  },
   gate: {
-    key: "GATE_KEY",
-    secret: "GATE_SECRET",
+    key: "__KEY__",
+    secret: "__SECRET__",
     feesPercent: 0.2,
   },
   email: {
-    host: 'smtp.HOST.email',
+    host: 'smtp.ethereal.email',
     port: 587,
-    user: 'USER',
-    pass: 'PASSWORD'
+    user: '__USER__',
+    pass: '__PASS__'
   },
-  emailRecipient: 'admin@my.domain.com',
+  emailRecipient: '__RECIPIENT@DOMAIN.COM__',
   operation: {
-    minimumOperationCostUSD: 20,
-    operationUseBalancePercent: 100,
+    minimumOperationCostUSD: 1,
+    operationUseBalancePercent: 10,
     maxSimultaneousOperations: 1,
     priceTrackingIntervalInMillis: 500,
     orderTrackingIntervalInMillis: 500,
-    emergencySellOrderDistancePercent: -1,
   },
   buy: {
-    buyDistancePercent: 0.01,
-    retryLimitInMillis: 1000,
+    buyDistancePercent: 0.1,
+    retryLimitInMillis: 5000,
   },
   takeProfit: {
-    triggerDistancePercent: 7,
-    sellDistancePercent: 6,
+    triggerDistancePercent: 0.02,
+    sellDistancePercent: 0.01,
+    orderExpiration: TimeInSeconds.ONE_WEEK,
   },
   stopLoss: {
-    triggerDistancePercent: -2,
-    sellDistancePercent: -4,
+    triggerDistancePercent: -10.2,
+    sellDistancePercent: -10.3,
+    orderExpiration: TimeInSeconds.ONE_WEEK
   },
+  emergencySell: {
+    sellDistancePercent: -0.5,
+    retryPercentModifier: -0,
+    retryPercentModifierLimit: -1,
+  }
 }
-
-/**
- * 
- * Operation events visualization :
- * 
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! : SELL_TRIGGER_PRICE (BUY_PRICE + sell.triggerDistancePercent) 
- * ------------------------------------------ : SELL_EXECUTE_PRICE (BUY_PRICE + sell.sellDistancePercent)
- * 
- * 
- * ++++++++++++++++++++++++++++++++++++++++++ : BUY_PRICE (ASSET_PRICE + buy.buyDistancePercent)
- * .......................................... : ASSET_PRICE (announcement signal)
- * 
- * 
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! : STOP_LOSS_TRIGGER_PRICE (BUY_PRICE - stopLoss.triggerDistancePercent) 
- * ------------------------------------------ : STOP_LOSS_EXECUTE_PRICE (BUY_PRICE - stopLoss.sellDistancePercent) 
- * 
- */

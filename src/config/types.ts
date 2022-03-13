@@ -1,14 +1,17 @@
 export interface BotConfig {
-  socketAddr: string
   logsPath: string
   cleanLogsPathOnStart: boolean,
+  emailRecipient: `${string}@${string}.${string}`
+  signalHub: {
+    port: number,
+    authToken: string
+  },
   email: {
     host: string
     port: number
     user: string
     pass: string
   }
-  emailRecipient: `${string}@${string}.${string}`
   gate: {
     key: string
     secret: string
