@@ -41,10 +41,6 @@ class TradingBotService {
 
     SignalsHub.subscribe('message', async (event) => {
       const data = event.detail
-      if (typeof data !== 'object') {
-        Console.log(`[SIGNALS_HUB] Unknown message received`, data)
-        return
-      }
 
       Console.log('--------------')
       Console.log('[SIGNALS_HUB] Message type:', data.type)
