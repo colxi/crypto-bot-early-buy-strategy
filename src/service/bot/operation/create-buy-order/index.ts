@@ -129,6 +129,7 @@ export async function createBuyOrder(
   logger.log(' - Left :', order.left, symbol)
   logger.log(' - Fee :', order.fee, symbol)
   logger.log(' - Time since trade start :', Date.now() - startTime, 'ms')
+  logger.lineBreak()
 
   return {
     id: order.id,

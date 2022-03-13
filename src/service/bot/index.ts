@@ -121,6 +121,7 @@ class TradingBotService {
     try {
       Console.log(`Creating operation for ${assetPair}...`)
       operation = await Operation.create(symbol)
+      Console.log(`Operation ${operation.id} started! (${assetPair}`)
     } catch (e) {
       Console.log(`ERROR creating operation ${assetPair} :`, Gate.getGateResponseError(e))
       this.isCreatingAnotherOperation = false
@@ -132,10 +133,6 @@ class TradingBotService {
      * 
      * Handle OPERATION events
      */
-    operation.subscribe('operationStarted', () => {
-      Console.log(`Operation ${operation.id} started! (${assetPair}`)
-    })
-
     operation.subscribe('operationFinished', (event) => {
       Console.log('Finish reason : ', event.detail.reason)
       Console.log(`Operation ${operation.id} ended! (${assetPair}`)
