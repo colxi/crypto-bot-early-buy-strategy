@@ -3,6 +3,7 @@ import { CustomEvent } from '@/lib/evented-service/custom-event'
 import WebSocket from 'ws'
 import { Console } from '../console'
 
+
 export class SignalsHubMessageEvent extends CustomEvent<{
   assetName: string
   type: 'PUMP' | 'TEST'
@@ -23,13 +24,13 @@ type ServiceEvents = {
 
 export class SignalsHubService extends EventedService<ServiceEvents>{
   constructor() {
-    super(['message', 'connection'])
+    super()
     this.server = null
   }
 
   server: WebSocket.Server | null
 
-  start() {
+  async start() {
     const wss = new WebSocket.Server({ port: 9898 })
     this.server = wss
 
@@ -51,7 +52,7 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
     })
   }
 
-  stop() {
+  async stop() {
     this.server?.close()
     this.server = null
   }

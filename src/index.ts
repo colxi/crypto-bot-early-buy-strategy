@@ -1,12 +1,9 @@
-import { SignalsHub } from './service/signals-hub/indes'
-import WebsocketConnection from './lib/websocket'
+import { SignalsHub } from './service/signals-hub'
 import { Gate } from './service/gate-client'
-import { config } from './config'
 import { TradingBot } from './service/bot'
 import { validateConfig } from './config/validate-config'
 import { UI, ui } from './ui'
 import { Console } from './service/console'
-import { Socket } from './service/socket'
 import { CLI } from './service/cli'
 import { GateMonitor } from './service/gate-monitor'
 import { OperationsMonitor } from './service/operations-monitor'
@@ -26,8 +23,8 @@ async function init(): Promise<void> {
     validateConfig()
     const ui = new UI()
     await Console.start(ui.console)
-    await Socket.start()
     await Gate.start()
+    await SignalsHub.start()
     await TradingBot.start()
     await CLI.start()
     await GateMonitor.start(ui.balance)

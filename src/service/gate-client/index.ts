@@ -39,7 +39,7 @@ class GateService {
     this.assetPairs = assetPairs
     setInterval(() => void this.updateAssetPairs(), TimeInMillis.ONE_DAY)
 
-    Console.log('🟢 Initializing Gate Client...')
+    Console.log('Initializing Gate Client...')
     Console.log('Gate API latency: ', await Gate.getLatency(), 'ms (single way)')
     Console.log('Available Balance: ', await Gate.geAvailableBalanceUSDT(), 'USDT')
     Console.log('Available asset pairs: ', Object.keys(Gate.assetPairs).length)

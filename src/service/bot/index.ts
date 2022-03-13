@@ -3,16 +3,14 @@ import { AssetPair, SymbolName } from '../gate-client/types'
 import { Operation } from './operation'
 import { clearDir, createPath, getProjectRootDir } from '@/lib/file'
 import fs from 'fs'
-import { Socket } from '@/service/socket'
 import { Console } from '@/service/console'
 import { Gate } from '@/service/gate-client'
-import { parseWebsocketSignal } from './signal-parser'
-import { SignalsHub } from '../signals-hub/indes'
+import { SignalsHub } from '../signals-hub'
 
 
 function initializeLogsDirectory() {
   const logsAbsPath = createPath(getProjectRootDir(), config.logsPath)
-  Console.log('Initializing LOGS directory...', logsAbsPath)
+  Console.log('Initializing LOGS directory...')
 
   // create directory if doe snot exist
   if (!fs.existsSync(logsAbsPath)) {
@@ -33,12 +31,8 @@ function initializeLogsDirectory() {
 
 class TradingBotService {
   async start() {
-    Console.log('🟢 Initializing Bot')
+    Console.log('Initializing Bot')
     initializeLogsDirectory()
-
-    Console.log('Listening for new assets announcements...')
-
-    SignalsHub.start()
 
     SignalsHub.subscribe('connection', async (event) => {
       const address = event.detail.address
@@ -64,45 +58,24 @@ class TradingBotService {
 
       // Block if asset is not available or is not tradeable
       if (!Gate.assetPairs[assetPair]) {
-        Console.log(`[SIGNALS_HUB]  Symbol ${data.assetName} not found on Gate.io.Ignoring signal`)
+        Console.log(`[SIGNALS_HUB] Symbol ${data.assetName} not found on Gate.io.Ignoring signal`)
         return
       }
       if (!Gate.assetPairs[assetPair].tradeStatus) {
-        Console.log(`[SIGNALS_HUB]  Symbol ${data.assetName} found on Gate.io but is not tradeable. Ignoring signal`)
+        Console.log(`[SIGNALS_HUB] Symbol ${data.assetName} found on Gate.io but is not tradeable. Ignoring signal`)
         return
       }
 
       if (data.type === 'TEST') {
-        Console.log(`[SIGNALS_HUB]  Testing message detected. Ignoring`)
+        Console.log(`[SIGNALS_HUB] Testing message detected. Ignoring`)
         return
       }
 
       await this.createOperation(symbol)
     })
 
-    Socket.subscribe('message', async (event) => {
-      const { message } = event.detail
-      if (typeof message === 'string') {
-        const announcement = parseWebsocketSignal(message)
-        if (!announcement) return
-        Console.log('---------')
-        Console.log('EXCHANGE ANNOUNCEMENT :', message)
-        Console.log('MESSAGE :', message)
-        Console.log('EXCHANGE :', announcement.exchange)
-        Console.log('SYMBOLS :', announcement.symbols)
-        for (const symbol of announcement.symbols) {
-          const assetPair: AssetPair = `${symbol}_USDT`
-          // Block if asset is not available or is not tradeable
-          if (!Gate.assetPairs[assetPair]) continue
-          if (!Gate.assetPairs[assetPair].tradeStatus) continue
-          else {
-            await this.createOperation(symbol)
-            // BLOCK! only open first symbol...for now
-            break
-          }
-        }
-      } else Console.log('Unknown message from WS', message)
-    })
+    Console.log('Listening for new assets announcements...')
+
   }
 
   operations: Record<string, Operation> = {}

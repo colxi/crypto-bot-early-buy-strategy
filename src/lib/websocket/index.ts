@@ -25,7 +25,7 @@ export class WebsocketConnectionEvent extends CustomEvent<{
 
 export default class WebsocketConnection extends EventedService<ServiceEvents>{
   constructor(config: WebsocketConnectionConfig) {
-    super(['message', 'connect'])
+    super()
     this.#log = config.logger || this.#log
     this.host = config.host
     this.reconnectOnDisconnection = config.reconnectOnDisconnection

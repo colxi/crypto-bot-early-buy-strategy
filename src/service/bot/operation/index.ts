@@ -39,7 +39,7 @@ export class Operation extends EventedService<ServiceEvents> {
     startTime: number,
     logger: Logger
   ) {
-    super(['operationStarted', 'operationFinished'])
+    super()
 
     this.id = lastOperationId++
     this.symbol = symbol
