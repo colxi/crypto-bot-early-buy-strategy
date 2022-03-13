@@ -2,7 +2,6 @@ import { config } from '..'
 
 export function validateConfig() {
   // general
-  if (!config.socketAddr.length) throw new Error('Invalid config.socketAddress.')
   if (!config.logsPath.length) throw new Error('Invalid config.logsPath')
   // gate
   if (!config.gate.key.length) throw new Error('Invalid config.gate.key')
