@@ -30,6 +30,11 @@ function initializeLogsDirectory() {
 
 
 class TradingBotService {
+
+  public readonly operations: Record<string, Operation> = {}
+
+  private isCreatingAnotherOperation: boolean = false
+
   async start() {
     Console.log('Initializing Bot')
     initializeLogsDirectory()
@@ -73,9 +78,6 @@ class TradingBotService {
     Console.log('Listening for new assets announcements...')
 
   }
-
-  operations: Record<string, Operation> = {}
-  isCreatingAnotherOperation: boolean = false
 
 
   public async createOperation(symbol: SymbolName): Promise<void> {
@@ -121,13 +123,13 @@ class TradingBotService {
     try {
       Console.log(`Creating operation for ${assetPair}...`)
       operation = await Operation.create(symbol)
-      Console.log(`Operation ${operation.id} started! (${assetPair}`)
+      this.operations[operation.id] = operation
+      Console.log(`Operation #${operation.id} started! (${assetPair})`)
     } catch (e) {
       Console.log(`ERROR creating operation ${assetPair} :`, Gate.getGateResponseError(e))
       this.isCreatingAnotherOperation = false
       return
     }
-    this.operations[operation.id] = operation
 
     /**
      * 
@@ -135,7 +137,7 @@ class TradingBotService {
      */
     operation.subscribe('operationFinished', (event) => {
       Console.log('Finish reason : ', event.detail.reason)
-      Console.log(`Operation ${operation.id} ended! (${assetPair}`)
+      Console.log(`Operation #${operation.id} ended! (${assetPair})`)
       delete this.operations[event.detail.operation.id]
     })
 

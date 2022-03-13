@@ -18,20 +18,8 @@ class OperationsMonitorService {
   }
 
   async updateWidget() {
-    // TradingBot.operations[0].operationCost
-    const operations = [
-      {
-        id: 1,
-        symbol: 'BTC',
-        assetPair: 'BTC_USDT',
-        amount: 11,
-        entryPrice: '123.34',
-        elapsedTime: 12,
-        ROE: 12.2,
-        operationCost: 1234.345
-      }
-    ]
-    this.operations.update(operations as any)
+    const operations = Object.values(TradingBot.operations)
+    this.operations.update(operations)
   }
 }
 
