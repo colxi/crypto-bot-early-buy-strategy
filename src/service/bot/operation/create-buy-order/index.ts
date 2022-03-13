@@ -136,7 +136,7 @@ export async function createBuyOrder(
     originalAssetPrice: String(assetPairPrice),
     buyPrice: effectivePrice,
     amount: effectiveAmount,
-    operationCost: String(operationCost),
+    operationCost: effectiveOperationCostPrice,
     order: order
   }
 }

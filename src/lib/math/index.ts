@@ -1,6 +1,17 @@
 
 /**
  * 
+ * Returns the difference betwen two values, as a percentage
+ * 
+ */
+export function getPercentageDiff(a: number, b: number, precision: number = 2): number {
+  if (!a) return 0
+  return Number(toFixed((b - a) * 100 / a, precision))
+}
+
+
+/**
+ * 
  * Returns the requested percentage of the provided value
  * 
  */

@@ -1,4 +1,4 @@
-import { toFixed } from '@/lib/math'
+import { getPercentageDiff, toFixed } from '@/lib/math'
 import { Operation } from '@/service/bot/operation'
 import blessed from 'blessed'
 import { UI } from '.'
@@ -34,8 +34,15 @@ export class Operations {
       operations.forEach(o => {
         // { id: 1, assetPair: 'BTC_USDT', amount: 11, entryPrice: '123.34', elapsedTime: 12, ROE: 12.2 }
         const elapsedTime = toFixed((Date.now() - o.startTime) / 1000, 2)
+        const PNL = getPercentageDiff(Number(o.buyOrderDetails.buyPrice), o.lastAssetPairPrice)
         this.element.pushLine(`ID #${o.id}`)
-        this.element.pushLine(`Elapsed time ${elapsedTime} seconds`)
+        this.element.pushLine(`Elapsed time : ${elapsedTime} seconds`)
+        this.element.pushLine(`Operation cost : ${o.buyOrderDetails.operationCost} USDT`)
+        this.element.pushLine(`Original price : ${o.buyOrderDetails.originalAssetPrice} USDT`)
+        this.element.pushLine(`Entry amount : ${o.buyOrderDetails.amount} ${o.symbol}`)
+        this.element.pushLine(`Entry price : ${o.buyOrderDetails.buyPrice} USDT`)
+        this.element.pushLine(`Current price : ${o.lastAssetPairPrice} USDT`)
+        this.element.pushLine(`PNL : ${PNL}%`)
         // this.element.pushLine(`  TotalUnits   : ${o.amount} ${o.symbol}`)
         // this.element.pushLine(`  TotalSpent   : ${o.operationCost} USDT`)
         // this.element.pushLine(`  BuyPrice     : 234.23432 USDT`)

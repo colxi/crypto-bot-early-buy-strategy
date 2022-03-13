@@ -74,10 +74,10 @@ export class Operation extends EventedService<ServiceEvents> {
   private operationTrackingTimer: NodeJS.Timeout | undefined
 
   // ORDERS
-  private emergencySellOrder: GateOrderDetails | null
-  private takeProfitTriggeredOrderDetails: OperationTriggeredOrderDetails | null
-  private stopLossTriggeredOrderDetails: OperationTriggeredOrderDetails | null
-  private buyOrderDetails: OperationBuyOrderDetails
+  public emergencySellOrder: GateOrderDetails | null
+  public takeProfitTriggeredOrderDetails: OperationTriggeredOrderDetails | null
+  public stopLossTriggeredOrderDetails: OperationTriggeredOrderDetails | null
+  public buyOrderDetails: OperationBuyOrderDetails
 
 
   /*------------------------------------------------------------------------------------------------
