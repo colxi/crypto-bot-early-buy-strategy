@@ -114,6 +114,7 @@ export async function createBuyOrder(
 
   const effectiveAmount = toFixed(Number(order.amount) - Number(order.left) - Number(order.fee), amountPrecision)
   const effectivePrice = toFixed(Number(order.fill_price) / Number(order.amount), usdtPrecision)
+  const effectiveOperationCostPrice = toFixed((Number(order.amount) - Number(order.left)) * Number(effectivePrice), usdtPrecision)
 
   /**
    * 
@@ -124,6 +125,9 @@ export async function createBuyOrder(
   logger.log(' - Buy order ID :', order.id)
   logger.log(' - Effective buy amount', effectiveAmount, symbol, `(buyAmount - fees)`)
   logger.log(' - Effective buy price :', effectivePrice, 'USDT')
+  logger.log(' - Effective operation cost :', effectiveOperationCostPrice, 'USDT')
+  logger.log(' - Left :', order.left, symbol)
+  logger.log(' - Fee :', order.fee, symbol)
   logger.log(' - Time since trade start :', Date.now() - startTime, 'ms')
 
   return {
