@@ -44,7 +44,7 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
     try {
       data = JSON.parse(message)
       if (typeof data !== 'object') throw new Error('Invalid message received')
-      if (this.isValidMessage(data)) throw new Error('Invalid message received')
+      if (!this.isValidMessage(data)) throw new Error('Invalid message received')
     } catch (e) {
       Console.log('[SIGNAL-HUB] Error parsing incoming message:')
       Console.log('[SIGNAL-HUB]', message)
@@ -55,6 +55,8 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
       Console.log('[SIGNAL-HUB] Invalid auth token found in message', data.authToken)
       return
     }
+
+    console.log(data)
 
     this.dispatchEvent('message', data)
   }
