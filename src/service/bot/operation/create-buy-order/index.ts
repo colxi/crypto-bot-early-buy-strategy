@@ -50,10 +50,10 @@ export async function createBuyOrder(
    * 
    */
   const operationBudget = getPercentage(availableUSDTBalance, config.operation.operationUseBalancePercent)
-  const currencyPrecision = Gate.assetPairs[assetPair].amountPrecision!
+  const amountPrecision = Gate.assetPairs[assetPair].amountPrecision!
   const usdtPrecision = Gate.assetPairs[assetPair].precision!
   const buyPrice = toFixed(applyPercentage(assetPairPrice, config.buy.buyDistancePercent), usdtPrecision)
-  const buyAmount = toFixed(operationBudget / Number(buyPrice), currencyPrecision)
+  const buyAmount = toFixed(operationBudget / Number(buyPrice), amountPrecision)
   const operationCost = Number(toFixed(Number(buyAmount) * Number(buyPrice), usdtPrecision))
 
   logger.lineBreak()
@@ -112,8 +112,8 @@ export async function createBuyOrder(
     throw new OperationError(errorMessage, { code: OperationErrorCode.BUY_ORDER_NOT_EXECUTED, status: order.status })
   }
 
-  const effectiveAmount = toFixed(Number(order.amount) - Number(order.fee), currencyPrecision)
-  const effectivePrice = toFixed(Number(order.fill_price) / Number(order.amount), currencyPrecision)
+  const effectiveAmount = toFixed(Number(order.amount) - Number(order.left) - Number(order.fee), amountPrecision)
+  const effectivePrice = toFixed(Number(order.fill_price) / Number(order.amount), usdtPrecision)
 
   /**
    * 
