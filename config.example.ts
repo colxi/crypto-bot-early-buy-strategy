@@ -4,6 +4,7 @@ import { TimeInSeconds } from './src/lib/date'
 export const config: BotConfig = {
   logsPath: 'operation-logs',
   cleanLogsPathOnStart: false,
+  emailRecipient: '__RECIPIENT@DOMAIN.COM__',
   signalHub: {
     port: 9898,
     authToken: '__TOKEN__'
@@ -19,7 +20,6 @@ export const config: BotConfig = {
     user: '__USER__',
     pass: '__PASS__'
   },
-  emailRecipient: '__RECIPIENT@DOMAIN.COM__',
   operation: {
     minimumOperationCostUSD: 1,
     operationUseBalancePercent: 10,

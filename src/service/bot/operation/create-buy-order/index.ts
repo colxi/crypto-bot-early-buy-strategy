@@ -90,8 +90,8 @@ export async function createBuyOrder(
       price: buyPrice,
       // use immediate or cancel (IoC) as we are already targeting a price higher than
       // current. If price is already higher than the targeted, order will be CANCELED
-      // and trade will be aborted
-      timeInForce: Order.TimeInForce.Fok
+      // and trade will be aborted. IoC also allows partial buys, according to the market.
+      timeInForce: Order.TimeInForce.Ioc
     })
     order = response.data
   } catch (e) {
