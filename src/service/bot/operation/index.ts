@@ -45,6 +45,8 @@ export class Operation extends EventedService<ServiceEvents> {
     this.symbol = symbol
     this.assetPair = `${symbol}_USDT`
     this.lastAssetPairPrice = Number(buyOrderDetails.originalAssetPrice)
+    this.assetAllTimeLow = Number(buyOrderDetails.originalAssetPrice)
+    this.assetAllTimeHigh = Number(buyOrderDetails.originalAssetPrice)
     this.startTime = startTime
     this.logger = logger
     this.buyOrderDetails = buyOrderDetails
@@ -68,6 +70,8 @@ export class Operation extends EventedService<ServiceEvents> {
   public readonly assetPair: AssetPair
   public readonly symbol: SymbolName
   public lastAssetPairPrice: number
+  public assetAllTimeLow: number
+  public assetAllTimeHigh: number
 
   // TIMERS
   private priceTrackingTimer: NodeJS.Timeout | undefined
@@ -126,17 +130,16 @@ export class Operation extends EventedService<ServiceEvents> {
 
     this.logger.warning('Stopping Operation tracking')
     clearInterval(this.priceTrackingTimer!)
-    clearTimeout(this.priceTrackingTimer!)
-
-    clearInterval(this.operationTrackingTimer!)
-    clearTimeout(this.operationTrackingTimer!)
 
     if (endingReason === OperationEndReason.ERROR) await this.handleOperationError(error)
-
     await this.cancelRemainingOperationOrders()
+
+    this.logger.warning('Stopping price tracking')
+    clearTimeout(this.priceTrackingTimer!)
 
     this.logger.lineBreak()
     this.logger.log('- Operation finished')
+
     this.dispatchEvent('operationFinished', { operation: this, reason: endingReason })
   }
 
@@ -286,13 +289,18 @@ export class Operation extends EventedService<ServiceEvents> {
     if (!this.takeProfitTriggeredOrderDetails || !this.stopLossTriggeredOrderDetails) return
     try {
       const assetPairPrice = await Gate.getAssetPairPrice(this.assetPair)
-      this.lastAssetPairPrice = assetPairPrice
+      this.storeAssetPrice(assetPairPrice)
       this.logger.info(this.assetPair, 'AssetPair Price : ', assetPairPrice)
     } catch (e) {
       this.logger.error('Error tracking assetPairPrice', this.buyOrderDetails.id, Gate.getGateResponseError(e))
     }
   }
 
+  private storeAssetPrice(assetPairPrice: number) {
+    this.lastAssetPairPrice = assetPairPrice
+    if (assetPairPrice < this.assetAllTimeLow) this.assetAllTimeLow = assetPairPrice
+    if (assetPairPrice > this.assetAllTimeHigh) this.assetAllTimeHigh = assetPairPrice
+  }
 
   private async trackOperationOrders(): Promise<void> {
     if (this.operationStatus === OperationStatus.FINISHED) return
