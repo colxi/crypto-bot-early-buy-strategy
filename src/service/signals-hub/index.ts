@@ -56,8 +56,6 @@ export class SignalsHubService extends EventedService<ServiceEvents>{
       return
     }
 
-    Console.log(message)
-
     this.dispatchEvent('message', data)
   }
 
