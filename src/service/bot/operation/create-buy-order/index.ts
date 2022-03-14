@@ -12,8 +12,9 @@ import { OperationBuyOrderDetails } from '../types'
 export async function createBuyOrder(
   symbol: SymbolName,
   assetPair: AssetPair,
+  operationBudget: number,
   startTime: number,
-  logger: Logger
+  logger: Logger,
 ): Promise<OperationBuyOrderDetails> {
 
   /**
@@ -30,26 +31,6 @@ export async function createBuyOrder(
     throw new OperationError(errorMessage, { code: OperationErrorCode.ERROR_GETTING_ASSET_PRICE, })
   }
 
-  /**
-   * 
-   * Get available USDT BALANCE
-   * 
-   */
-  let availableUSDTBalance: number
-  try {
-    availableUSDTBalance = await Gate.geAvailableBalanceUSDT()
-  } catch (e) {
-    const errorMessage = `Error ocurred retrieving available USDT balance Gate.io!`
-    logger.error(errorMessage)
-    throw new OperationError(errorMessage, { code: OperationErrorCode.ERROR_GETTING_AVAILABLE_BALANCE, })
-  }
-
-  /**
-   * 
-   * Calculate operation amounts and sizes
-   * 
-   */
-  const operationBudget = getPercentage(availableUSDTBalance, config.operation.operationUseBalancePercent)
   const amountPrecision = Gate.assetPairs[assetPair].amountPrecision!
   const usdtPrecision = Gate.assetPairs[assetPair].precision!
   const buyPrice = toFixed(applyPercentage(assetPairPrice, config.buy.buyDistancePercent), usdtPrecision)

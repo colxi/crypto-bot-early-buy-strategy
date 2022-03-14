@@ -93,7 +93,7 @@ export class Operation extends EventedService<ServiceEvents> {
    * ----------------------------------------------------------------------------------------------*/
 
 
-  public static async create(symbol: SymbolName): Promise<Operation> {
+  public static async create(symbol: SymbolName, budget: number): Promise<Operation> {
     const startTime = Date.now()
     const assetPair: AssetPair = `${symbol}_USDT`
     const logFilename = `${getDateAsDDMMYYYY(startTime)}_${getTimeAsHHMMSS(startTime, '.')}_${symbol}`
@@ -104,7 +104,7 @@ export class Operation extends EventedService<ServiceEvents> {
 
     while (true) {
       try {
-        const buyOrderDetails = await createBuyOrder(symbol, assetPair, startTime, logger)
+        const buyOrderDetails = await createBuyOrder(symbol, assetPair, budget, startTime, logger)
         return new Operation(symbol, buyOrderDetails, startTime, logger)
       }
       catch (e) {
@@ -132,7 +132,7 @@ export class Operation extends EventedService<ServiceEvents> {
     this.logger.log(`Finishing Operation due to ${endingReason}...`)
 
     this.logger.warning('Stopping Operation tracking')
-    clearInterval(this.priceTrackingTimer!)
+    clearInterval(this.operationTrackingTimer!)
 
     if (endingReason === OperationEndReason.ERROR) await this.handleOperationError(error)
     await this.cancelRemainingOperationOrders()
@@ -265,13 +265,7 @@ export class Operation extends EventedService<ServiceEvents> {
   * 
   * ----------------------------------------------------------------------------------------------*/
 
-  private isTracking: boolean = false
-
   private startContextTracking() {
-    // prevent several tracking calls to be executed in parallel 
-    if (this.isTracking) return
-    this.isTracking = true
-
     this.operationTrackingTimer = setInterval(
       () => { this.trackOperationOrders().catch(() => Console.log('Failure on "trackOperationOrders"')) },
       config.operation.orderTrackingIntervalInMillis
@@ -280,20 +274,20 @@ export class Operation extends EventedService<ServiceEvents> {
       () => { this.trackAssetPairPrice().catch(() => Console.log('Failure on "trackAssetPairPrice"')) },
       config.operation.priceTrackingIntervalInMillis
     )
-
-    this.isTracking = false
   }
 
 
   private async trackAssetPairPrice(): Promise<void> {
-    if (this.operationStatus === OperationStatus.FINISHED) return
-
-    // Track only when all orders have been placed
+    // Track only when all orders have been placed (operation is ongoing)
     if (!this.takeProfitTriggeredOrderDetails || !this.stopLossTriggeredOrderDetails) return
     try {
       const assetPairPrice = await Gate.getAssetPairPrice(this.assetPair)
+      // if operation is marked as  finished store price but don't pollute the 
+      // log file with price data
       this.storeAssetPrice(assetPairPrice)
-      this.logger.info(this.assetPair, 'AssetPair Price : ', assetPairPrice)
+      if (this.operationStatus !== OperationStatus.FINISHED) {
+        this.logger.info(this.assetPair, 'AssetPair Price : ', assetPairPrice)
+      }
     } catch (e) {
       this.logger.error('Error tracking assetPairPrice', this.buyOrderDetails.id, Gate.getGateResponseError(e))
     }

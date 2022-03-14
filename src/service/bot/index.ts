@@ -1,3 +1,4 @@
+import { getPercentage, toFixed } from '@/lib/math'
 import { config } from '@/config'
 import { AssetPair, SymbolName } from '../gate-client/types'
 import { Operation } from './operation'
@@ -7,6 +8,7 @@ import { Console } from '@/service/console'
 import { Gate } from '@/service/gate-client'
 import { SignalsHub } from '../signals-hub'
 
+export type CreateOperationBudget = { amount: number, unit: 'percentage' | 'absolute' }
 
 function initializeLogsDirectory() {
   const logsAbsPath = createPath(getProjectRootDir(), config.logsPath)
@@ -71,8 +73,10 @@ class TradingBotService {
         Console.log(`[SIGNALS_HUB] Testing message detected. Ignoring`)
         return
       }
-
-      await this.createOperation(symbol)
+      await this.createOperation(
+        symbol,
+        { amount: config.operation.operationUseBalancePercent, unit: 'percentage' }
+      )
     })
 
     Console.log('Listening for new assets announcements...')
@@ -80,7 +84,10 @@ class TradingBotService {
   }
 
 
-  public async createOperation(symbol: SymbolName): Promise<void> {
+  public async createOperation(
+    symbol: SymbolName,
+    budget: CreateOperationBudget
+  ): Promise<void> {
     Console.log(`New asset announced: ${symbol}`)
 
     if (this.isCreatingAnotherOperation) {
@@ -116,13 +123,45 @@ class TradingBotService {
 
     /**
      * 
+     * Get available USDT BALANCE
+     * 
+     */
+    let availableUSDTBalance: number
+    try {
+      availableUSDTBalance = await Gate.geAvailableBalanceUSDT()
+    } catch (e) {
+      Console.log('Error ocurred retrieving available USDT balance Gate.io!')
+      this.isCreatingAnotherOperation = false
+      return
+    }
+
+    const usdtPrecision = Gate.assetPairs[assetPair].precision!
+    const operationBudget: number = (budget.unit === 'absolute')
+      ? Number(toFixed(budget.amount, usdtPrecision))
+      : Number(toFixed(getPercentage(availableUSDTBalance, budget.amount), usdtPrecision))
+
+
+    /**
+      * 
+      * Block if USDT amount is not available
+      * 
+      */
+    if (operationBudget > availableUSDTBalance) {
+      Console.log(`Requested amount is greater than available amount in USDT (${availableUSDTBalance})`)
+      this.isCreatingAnotherOperation = false
+      return
+    }
+
+    /**
+     * 
      * Create OPERATION
      * 
      */
     let operation: Operation
     try {
-      Console.log(`Creating operation for ${assetPair}...`)
-      operation = await Operation.create(symbol)
+      Console.log(`Creating operation for ${assetPair} (${operationBudget}USDT)`)
+      return
+      operation = await Operation.create(symbol, operationBudget)
       this.operations[operation.id] = operation
       Console.log(`Operation #${operation.id} started! (${assetPair})`)
     } catch (e) {

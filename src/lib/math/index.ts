@@ -1,4 +1,58 @@
 
+
+/**
+ * 
+ * Returns a boolean indicating if a string represents an amount in dollars (ended with $)
+ * 
+ */
+export function isAmountInDollarsString(num: unknown): num is `${number}$` {
+  if (typeof num !== 'string') return false
+  if (Array.from(num).pop() !== '$') return false
+  const number = Number(num.slice(0, -1))
+  if (isNaN(number)) return false
+  return true
+}
+
+/**
+ * 
+ * Extracts the number of an amount in dollars string
+ * 
+ */
+export function parseAmountInDollarsString(num: `${number}$`): number {
+  if (!isAmountInDollarsString(num)) throw new Error('Value is not an amount in dollars')
+  const value = Number(num.slice(0, -1))
+  if (isNaN(value)) throw new Error('Invalid amount in dollars')
+  return value
+}
+
+
+/**
+ * 
+ * Returns a boolean indicating if a string represents a  percentage
+ * 
+ */
+export function isPercentageString(num: unknown): num is `${number}%` {
+  if (typeof num !== 'string') return false
+  if (Array.from(num).pop() !== '%') return false
+  const number = Number(num.slice(0, -1))
+  if (isNaN(number)) return false
+  return true
+}
+
+
+/**
+ * 
+ * Extracts the number of a percentage string
+ * 
+ */
+export function parsePercentageString(num: `${number}%`): number {
+  if (!isPercentageString(num)) throw new Error('Value is not a percentage')
+  const value = Number(num.slice(0, -1))
+  if (isNaN(value)) throw new Error('Invalid percentage string')
+  return value
+}
+
+
 /**
  * 
  * Returns the difference betwen two values, as a percentage

@@ -1,3 +1,5 @@
+import { CreateOperationBudget } from './../bot/index'
+import { getPercentage, isAmountInDollarsString, isPercentageString, parseAmountInDollarsString, parsePercentageString } from '@/lib/math'
 import { config } from '@/config'
 import { clearDir, createPath, getProjectRootDir } from '@/lib/file'
 import { Gate } from '@/service/gate-client'
@@ -60,7 +62,8 @@ class CLIService {
       gap: async () => { await this.getAssetPrice(parameters) },
     }
 
-    Console.log('> ', input)
+    Console.log('')
+    Console.log('>', input)
     if (isValidCommand(command)) await handlers[command](parameters)
     else Console.log('Unknown command: ', command)
   }
@@ -140,20 +143,29 @@ class CLIService {
   }
 
   async commandOperationCreate(params: string) {
-    const [assetSymbol] = params.split(' ')
-    if (!assetSymbol) Console.log('Please provide a valid symbol (eg: BTC, ETH, ...).')
-    else {
-      Console.log('Creating operation...')
-      await TradingBot.createOperation(assetSymbol.toUpperCase())
+    const [assetSymbol, budget] = params.split(' ')
+    if (!assetSymbol) {
+      Console.log('Please provide a valid symbol (eg: BTC, ETH, ...).')
+      return
     }
-    Console.log('')
+    let operationBudget: CreateOperationBudget
+    if (!budget) operationBudget = { amount: config.operation.operationUseBalancePercent, unit: 'percentage' }
+    else if (isPercentageString(budget)) operationBudget = { amount: parsePercentageString(budget), unit: 'percentage' }
+    else if (isAmountInDollarsString(budget)) operationBudget = { amount: parseAmountInDollarsString(budget), unit: 'absolute' }
+    else {
+      Console.log('Invalid budget value')
+      Console.log('Value must be an absolute amount (20$) or a percentage (88%)')
+      return
+    }
+    Console.log('Creating operation (manual mode)...')
+    await TradingBot.createOperation(assetSymbol.toUpperCase(), operationBudget)
   }
+
 
   async commandGateAvailableBalance() {
     Console.log('Checking Gate Available USDT balance...')
     const balance = await Gate.geAvailableBalanceUSDT()
     Console.log(balance, 'USDT')
-    Console.log('')
   }
 
   async commandLogsRemove() {
@@ -167,7 +179,14 @@ class CLIService {
   async getAssetPrice(params: string) {
     Console.log('Getting Asset price...')
     const assetPair: AssetPair = `${params.toUpperCase()}_USDT`
-    const price = await Gate.getAssetPairPrice(assetPair)
+    let price: number
+    try {
+      price = await Gate.getAssetPairPrice(assetPair)
+    } catch (e) {
+      Console.log(`Asset ${assetPair} not found`)
+      Console.log('')
+      return
+    }
     Console.log(`${assetPair} ${price} USDT`)
     Console.log('')
   }
