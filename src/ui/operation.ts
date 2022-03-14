@@ -33,7 +33,7 @@ export class Operations {
     else {
       operations.forEach(o => {
         // { id: 1, assetPair: 'BTC_USDT', amount: 11, entryPrice: '123.34', elapsedTime: 12, ROE: 12.2 }
-        const elapsedTime = toFixed((Date.now() - o.startTime) / 1000, 2)
+        const elapsedTime = Math.ceil((Date.now() - o.startTime) / 1000)
         const PNL = getPercentageDiff(Number(o.buyOrderDetails.buyPrice), o.lastAssetPairPrice)
         this.element.pushLine(`ID #${o.id}`)
         this.element.pushLine(`Elapsed time : ${elapsedTime} seconds`)

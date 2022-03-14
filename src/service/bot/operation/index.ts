@@ -123,7 +123,10 @@ export class Operation extends EventedService<ServiceEvents> {
 
     if (this.operationStatus === OperationStatus.FINISHED) {
       this.logger.error('OPERATION ALREADY FINISHED, CANNOT FINISH AN OPERATION TWICE')
+      return
     } else this.operationStatus = OperationStatus.FINISHED
+
+    Console.log(`Finishing Operation due to ${endingReason}...`)
 
     this.logger.lineBreak()
     this.logger.log(`Finishing Operation due to ${endingReason}...`)
