@@ -160,7 +160,6 @@ class TradingBotService {
     let operation: Operation
     try {
       Console.log(`Creating operation for ${assetPair} (${operationBudget}USDT)`)
-      return
       operation = await Operation.create(symbol, operationBudget)
       this.operations[operation.id] = operation
       Console.log(`Operation #${operation.id} started! (${assetPair})`)
