@@ -28,6 +28,7 @@ export const config: BotConfig = {
     orderTrackingIntervalInMillis: 500,
   },
   buy: {
+    fallbackToPartialAfterAttempts: 4,
     buyDistancePercent: 0.1,
     retryLimitInMillis: 5000,
   },
