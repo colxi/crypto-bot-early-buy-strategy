@@ -77,7 +77,9 @@ export async function createBuyOrder(
     order = response.data
   } catch (e) {
     const errorMessage = `Error when trying to execute BUY order "${assetPair}"`
+    const originalErrorMessage = (e as any)?.message
     logger.error(errorMessage)
+    logger.error(originalErrorMessage)
     throw new OperationError(errorMessage, { code: OperationErrorCode.ERROR_CREATING_BUY_ORDER, details: Gate.getGateResponseError(e) })
   }
 
@@ -87,7 +89,9 @@ export async function createBuyOrder(
    * BLOCK if order has not been fulfilled 
    * 
    */
-  if (order.status !== Order.Status.Closed) {
+  const fillPrice = Number(order.fill_price)
+  const isCancelled = order.status === Order.Status.Cancelled
+  if (isCancelled && !fillPrice) {
     const errorMessage = `BUY order not executed "${assetPair}"`
     logger.error(errorMessage)
     throw new OperationError(errorMessage, { code: OperationErrorCode.BUY_ORDER_NOT_EXECUTED, status: order.status })
