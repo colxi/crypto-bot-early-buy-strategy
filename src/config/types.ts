@@ -25,6 +25,7 @@ export interface BotConfig {
     orderTrackingIntervalInMillis: number
   },
   buy: {
+    fallbackToPartialAfterAttempts: number
     buyDistancePercent: number
     retryLimitInMillis: number
   },

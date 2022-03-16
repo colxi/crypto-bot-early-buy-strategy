@@ -1,6 +1,6 @@
 import { config } from '@/config'
 import { AssetPair, GateOrderDetails, SymbolName } from '@/service/gate-client/types'
-import { applyPercentage, getPercentage, toFixed } from '@/lib/math'
+import { applyPercentage, toFixed } from '@/lib/math'
 import { Order } from 'gate-api'
 import { OperationError } from '../operation-error'
 import { OperationErrorCode } from '../operation-error/types'
@@ -13,9 +13,11 @@ export async function createBuyOrder(
   symbol: SymbolName,
   assetPair: AssetPair,
   operationBudget: number,
+  operationType: 'ioc' | 'fok',
   startTime: number,
   logger: Logger,
 ): Promise<OperationBuyOrderDetails> {
+
 
   /**
    * 
@@ -39,6 +41,7 @@ export async function createBuyOrder(
 
   logger.lineBreak()
   logger.log('Creating BUY order...')
+  logger.log(` - Operation type: `, operationType)
   logger.log(` - Current ${symbol} price:`, assetPairPrice, 'USDT')
   logger.log(' - Buy amount :', Number(buyAmount), symbol)
   logger.log(' - Buy price :', Number(buyPrice), `USDT (currentPrice + ${config.buy.buyDistancePercent}%)`)
@@ -69,10 +72,9 @@ export async function createBuyOrder(
       side: Order.Side.Buy,
       amount: buyAmount,
       price: buyPrice,
-      // use immediate or cancel (IoC) as we are already targeting a price higher than
-      // current. If price is already higher than the targeted, order will be CANCELED
-      // and trade will be aborted. IoC also allows partial buys, according to the market.
-      timeInForce: Order.TimeInForce.Ioc
+      timeInForce: operationType === 'fok'
+        ? Order.TimeInForce.Fok
+        : Order.TimeInForce.Ioc
     })
     order = response.data
   } catch (e) {

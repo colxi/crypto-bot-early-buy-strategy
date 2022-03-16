@@ -102,14 +102,26 @@ export class Operation extends EventedService<ServiceEvents> {
     logger.log(`New operation : ${assetPair}`)
     logger.log(`Operation start time: ${getDateAsDDMMYYYY(startTime)} ${getTimeAsHHMMSS(startTime)}`)
 
+    let buyAttempt = 0
     while (true) {
       try {
-        const buyOrderDetails = await createBuyOrder(symbol, assetPair, budget, startTime, logger)
+        const orderType = buyAttempt < config.buy.fallbackToPartialAfterAttempts
+          ? 'fok'
+          : 'ioc'
+        const buyOrderDetails = await createBuyOrder(
+          symbol,
+          assetPair,
+          budget,
+          orderType,
+          startTime,
+          logger
+        )
         return new Operation(symbol, buyOrderDetails, startTime, logger)
       }
       catch (e) {
         const elapsed = Date.now() - startTime
         if (elapsed > config.buy.retryLimitInMillis) throw e
+        buyAttempt++
       }
     }
   }
