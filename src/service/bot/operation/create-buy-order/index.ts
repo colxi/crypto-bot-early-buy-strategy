@@ -79,7 +79,7 @@ export async function createBuyOrder(
     order = response.data
   } catch (e) {
     const errorMessage = `Error when trying to execute BUY order "${assetPair}"`
-    const originalErrorMessage = (e as any)?.message
+    const originalErrorMessage = Gate.getGateResponseError(e)
     logger.error(errorMessage)
     logger.error(originalErrorMessage)
     throw new OperationError(errorMessage, { code: OperationErrorCode.ERROR_CREATING_BUY_ORDER, details: Gate.getGateResponseError(e) })
