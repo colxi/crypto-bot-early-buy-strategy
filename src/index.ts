@@ -1,3 +1,4 @@
+import { VersionCheck } from './service/version-check/index'
 import { SignalsHub } from './service/signals-hub'
 import { Gate } from './service/gate-client'
 import { TradingBot } from './service/bot'
@@ -23,6 +24,7 @@ async function init(): Promise<void> {
     validateConfig()
     const ui = new UI()
     await Console.start(ui.console)
+    await VersionCheck.start()
     await Gate.start()
     await SignalsHub.start()
     await TradingBot.start()
