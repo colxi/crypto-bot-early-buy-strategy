@@ -3,8 +3,9 @@ export interface BotConfig {
   cleanLogsPathOnStart: boolean,
   emailRecipient: `${string}@${string}.${string}`
   signalHub: {
-    port: number,
+    port: number
     authToken: string
+    maxSignalAgeInMillis: number
   },
   email: {
     host: string

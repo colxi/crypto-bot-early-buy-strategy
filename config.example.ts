@@ -1,5 +1,5 @@
 import { BotConfig } from '@/config/types'
-import { TimeInSeconds } from './src/lib/date'
+import { TimeInMillis, TimeInSeconds } from './src/lib/date'
 
 export const config: BotConfig = {
   logsPath: 'operation-logs',
@@ -7,7 +7,8 @@ export const config: BotConfig = {
   emailRecipient: '__RECIPIENT@DOMAIN.COM__',
   signalHub: {
     port: 9898,
-    authToken: '__TOKEN__'
+    authToken: '__TOKEN__',
+    maxSignalAgeInMillis: TimeInMillis.TEN_SECONDS
   },
   gate: {
     key: "__KEY__",

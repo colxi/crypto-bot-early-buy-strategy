@@ -43,34 +43,39 @@ class TradingBotService {
 
     SignalsHub.subscribe('connection', async (event) => {
       const address = event.detail.address
-      Console.log('[SIGNALS_HUB] : New connection', address)
+      Console.log('[SIGNALS_HUB] New connection', address)
     })
 
     SignalsHub.subscribe('message', async (event) => {
       const data = event.detail
-
+      const timeSinceEmissionInMillis = Date.now() - data.messageTime
       Console.log('--------------')
       Console.log('[SIGNALS_HUB] Message type:', data.type)
       Console.log('[SIGNALS_HUB] Message from:', data.serverName)
       Console.log('[SIGNALS_HUB] Message asset:', data.assetName)
-      Console.log('[SIGNALS_HUB] Detection LAG:', Date.now() - data.messageTime)
+      Console.log('[SIGNALS_HUB] Announcement LAG:', timeSinceEmissionInMillis)
       Console.log('[SIGNALS_HUB] Sending LAG:', Date.now() - data.sendTime)
       Console.log('--------------')
       const symbol = data.assetName
       const assetPair: AssetPair = `${symbol}_USDT`
 
+      // Block if signal is too old
+      if (timeSinceEmissionInMillis > config.signalHub.maxSignalAgeInMillis) {
+        Console.log(`[SIGNALS_HUB] Signal for ${data.assetName} is too old ${Math.ceil(timeSinceEmissionInMillis / 1000)} seconds. Ignoring`)
+        return
+      }
       // Block if asset is not available or is not tradeable
       if (!Gate.assetPairs[assetPair]) {
         Console.log(`[SIGNALS_HUB] Symbol ${data.assetName} not found on Gate.io.Ignoring signal`)
         return
       }
       if (!Gate.assetPairs[assetPair].tradeStatus) {
-        Console.log(`[SIGNALS_HUB] Symbol ${data.assetName} found on Gate.io but is not tradeable. Ignoring signal`)
+        Console.log(`[SIGNALS_HUB] Symbol ${data.assetName} found on Gate.io but is not tradeable.Ignoring signal`)
         return
       }
 
       if (data.type === 'TEST') {
-        Console.log(`[SIGNALS_HUB] Testing message detected. Ignoring`)
+        Console.log(`[SIGNALS_HUB] Testing message detected.Ignoring`)
         return
       }
       await this.createOperation(
@@ -88,7 +93,7 @@ class TradingBotService {
     symbol: SymbolName,
     budget: CreateOperationBudget
   ): Promise<void> {
-    Console.log(`New asset announced: ${symbol}`)
+    Console.log(`New asset announced: ${symbol} `)
 
     if (this.isCreatingAnotherOperation) {
       Console.log('Busy creating another operation. Ignoring announcement...')
@@ -103,9 +108,9 @@ class TradingBotService {
      * BLOCK if there is another ongoing Operation with the same AssetPair
      * 
      */
-    const assetPair: AssetPair = `${symbol}_USDT`
+    const assetPair: AssetPair = `${symbol} _USDT`
     if (this.operations[assetPair]) {
-      Console.log(`There is another ongoing Operation for ${assetPair}. Ignoring announcement...`)
+      Console.log(`There is another ongoing Operation for ${assetPair}.Ignoring announcement...`)
       this.isCreatingAnotherOperation = false
       return
     }
@@ -147,7 +152,7 @@ class TradingBotService {
       * 
       */
     if (operationBudget > availableUSDTBalance) {
-      Console.log(`Requested amount is greater than available amount in USDT (${availableUSDTBalance})`)
+      Console.log(`Requested amount is greater than available amount in USDT(${availableUSDTBalance})`)
       this.isCreatingAnotherOperation = false
       return
     }
@@ -159,12 +164,12 @@ class TradingBotService {
      */
     let operation: Operation
     try {
-      Console.log(`Creating operation for ${assetPair} (${operationBudget}USDT)`)
+      Console.log(`Creating operation for ${assetPair}(${operationBudget}USDT)`)
       operation = await Operation.create(symbol, operationBudget)
       this.operations[operation.id] = operation
-      Console.log(`Operation #${operation.id} started! (${assetPair})`)
+      Console.log(`Operation #${operation.id} started!(${assetPair})`)
     } catch (e) {
-      Console.log(`ERROR creating operation ${assetPair} :`, Gate.getGateResponseError(e))
+      Console.log(`ERROR creating operation ${assetPair} : `, Gate.getGateResponseError(e))
       this.isCreatingAnotherOperation = false
       return
     }
@@ -175,7 +180,7 @@ class TradingBotService {
      */
     operation.subscribe('operationFinished', (event) => {
       Console.log('Finish reason : ', event.detail.reason)
-      Console.log(`Operation #${operation.id} ended! (${assetPair})`)
+      Console.log(`Operation #${operation.id} ended!(${assetPair})`)
       delete this.operations[event.detail.operation.id]
     })
 
