@@ -1,3 +1,4 @@
+import { getTimeAsHHMMSS } from '@/lib/date'
 import { ConsoleUI } from '@/ui/console'
 
 export class Console {

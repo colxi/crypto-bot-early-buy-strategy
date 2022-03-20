@@ -1,3 +1,4 @@
+import { getTimeAsHHMMSS } from '@/lib/date'
 import { Console } from '@/service/console'
 import blessed from 'blessed'
 import { UI } from './'
@@ -59,7 +60,7 @@ export class ConsoleUI {
       else return i
     })
 
-    const content = formatted.join(' ')
+    const content = `${getTimeAsHHMMSS()} ${formatted.join(' ')}`
     if (this.element.getLines().length > CONSOLE_MAX_LINES) this.element.shiftLine(0)
     this.element.pushLine(content)
     this.element.setScrollPerc(100)

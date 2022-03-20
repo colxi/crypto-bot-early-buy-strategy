@@ -1,3 +1,4 @@
+import { getTimeAsHHMMSS } from '@/lib/date'
 import { getPercentage, toFixed } from '@/lib/math'
 import { config } from '@/config'
 import { AssetPair, SymbolName } from '../gate-client/types'
@@ -50,11 +51,13 @@ class TradingBotService {
       const data = event.detail
       const timeSinceEmissionInMillis = Date.now() - data.messageTime
       Console.log('--------------')
+      Console.log('[SIGNALS_HUB] New message!', `(${Date.now()})`)
       Console.log('[SIGNALS_HUB] Message type:', data.type)
       Console.log('[SIGNALS_HUB] Message from:', data.serverName)
       Console.log('[SIGNALS_HUB] Message asset:', data.assetName)
       Console.log('[SIGNALS_HUB] Announcement LAG:', timeSinceEmissionInMillis)
       Console.log('[SIGNALS_HUB] Sending LAG:', Date.now() - data.sendTime)
+      Console.log('[SIGNALS_HUB] Message creation time:', data.messageTime)
       Console.log('--------------')
       const symbol = data.assetName
       const assetPair: AssetPair = `${symbol}_USDT`
