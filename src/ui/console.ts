@@ -52,7 +52,7 @@ export class ConsoleUI {
   private readonly ui: UI
   public element: blessed.Widgets.BoxElement
 
-  public print(...data: (string | boolean | number | object)[]) {
+  public print(...data: (string | boolean | number | object | null)[]) {
     if (!data.length) return
     const formatted = data.map(i => {
       if (typeof i === 'number') return `{green-fg}${i}{/}`

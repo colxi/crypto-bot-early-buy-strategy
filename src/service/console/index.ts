@@ -7,7 +7,7 @@ export class Console {
     this.consoleUI = consoleUI
   }
 
-  public static log(...args: (number | string | boolean | object)[]) {
+  public static log(...args: (number | string | boolean | object | null)[]) {
     this.consoleUI.print(...args)
   }
 
