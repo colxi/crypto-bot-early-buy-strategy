@@ -100,8 +100,8 @@ export async function createBuyOrder(
   }
 
   const effectiveAmount = toFixed(Number(order.amount) - Number(order.left) - Number(order.fee), amountPrecision)
-  const effectivePrice = toFixed(Number(order.fill_price) / Number(order.amount), usdtPrecision)
-  const effectiveOperationCostPrice = toFixed((Number(order.amount) - Number(order.left)) * Number(effectivePrice), usdtPrecision)
+  const effectivePrice = toFixed(Number(order.fill_price) / Number(effectiveAmount), usdtPrecision)
+  const effectiveOperationCostPrice = toFixed((Number(effectiveAmount) - Number(order.left)) * Number(effectivePrice), usdtPrecision)
 
   /**
    * 
