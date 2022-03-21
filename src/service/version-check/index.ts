@@ -21,7 +21,7 @@ export class VersionCheck {
 
   static async cycle() {
     const isUpToDate = await this.isLastVersion()
-    if (isUpToDate) Console.log('[VERSION-CHECK] You ar running last available version')
+    if (isUpToDate) Console.log('[VERSION-CHECK] You are running last available version')
     else {
       Console.log('[VERSION-CHECK] You ar NOT running last available version : ')
       Console.log('[VERSION-CHECK]', this.lastCheckError)
