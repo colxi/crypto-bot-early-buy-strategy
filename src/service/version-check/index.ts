@@ -13,7 +13,7 @@ export class VersionCheck {
   static async start() {
     Console.log('[VERSION-CHECK] Starting...')
     setInterval(
-      () => { this.cycle().catch(() => Console.log('Error checking version')) },
+      () => { this.cycle().catch(() => Console.log('[VERSION-CHECK] Error checking version')) },
       TimeInMillis.ONE_DAY
     )
     await this.cycle()
@@ -21,10 +21,10 @@ export class VersionCheck {
 
   static async cycle() {
     const isUpToDate = await this.isLastVersion()
-    if (isUpToDate) Console.log('You ar running last available version')
+    if (isUpToDate) Console.log('[VERSION-CHECK] You ar running last available version')
     else {
-      Console.log('You ar NOT running last available version : ')
-      Console.log(this.lastCheckError)
+      Console.log('[VERSION-CHECK] You ar NOT running last available version : ')
+      Console.log('[VERSION-CHECK]', this.lastCheckError)
     }
   }
 
@@ -34,7 +34,7 @@ export class VersionCheck {
     this.isUpToDate = isUpToDate
     this.branch = repoInfo.branch
     this.versionDate = repoInfo.committerDate
-    if (isUpToDate) this.lastCheckError = errors[0] || 'UNKNOWN ERROR'
+    if (!isUpToDate) this.lastCheckError = errors[0] || 'UNKNOWN ERROR'
     return isUpToDate
   }
 }

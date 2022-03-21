@@ -1,15 +1,14 @@
 import { TimeInMillis } from '@/lib/date'
-import { Balance } from '@/ui/balance'
 import { Console } from '../console'
 import { Gate } from '../gate-client'
+import { ui } from './../../ui/index'
+
 
 const REFRESH_INTERVAL_IN_MILLIS = TimeInMillis.FIVE_SECONDS
 
 class GateMonitorService {
-  public balance!: Balance
 
-  async start(balance: Balance) {
-    this.balance = balance
+  async start() {
     setInterval(() => {
       this.updateWidget().catch((e) => Console.log(e.message))
     }, REFRESH_INTERVAL_IN_MILLIS)
@@ -19,7 +18,7 @@ class GateMonitorService {
     const startTime = Date.now()
     const balanceInUSDT = await Gate.geAvailableBalanceUSDT()
     const latency = Date.now() - startTime
-    this.balance.update(String(balanceInUSDT), latency)
+    ui.balance.update(String(balanceInUSDT), latency)
   }
 }
 

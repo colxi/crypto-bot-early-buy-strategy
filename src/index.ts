@@ -3,7 +3,7 @@ import { SignalsHub } from './service/signals-hub'
 import { Gate } from './service/gate-client'
 import { TradingBot } from './service/bot'
 import { validateConfig } from './config/validate-config'
-import { UI, ui } from './ui'
+import { ui } from './ui'
 import { Console } from './service/console'
 import { CLI } from './service/cli'
 import { GateMonitor } from './service/gate-monitor'
@@ -11,29 +11,34 @@ import { OperationsMonitor } from './service/operations-monitor'
 
 
 process.on('uncaughtException', function err(e) {
-  ui.screen.destroy()
-  console.clear()
-  console.log('FATAL ERROR, please restart the bot!')
-  console.log(e.message)
+  const errorMessage = e instanceof Error ? e.message : String(e)
+  Console.log('FATAL ERROR, please restart the bot!')
+  Console.log(errorMessage)
+  void ui.screen.destroy()
+  console.log()
+  console.log('FATAL ERROR:')
+  console.log()
+  if (typeof e === 'object') {
+    for (const prop of Object.getOwnPropertyNames(e || {}).sort()) {
+      console.log(`[ERROR:${prop.toUpperCase()}]`)
+      console.log(e[prop as keyof Error])
+      console.log()
+    }
+  } else console.log(e)
   process.exit()
 })
 
 
 async function init(): Promise<void> {
-  try {
-    validateConfig()
-    const ui = new UI()
-    await Console.start(ui.console)
-    await VersionCheck.start()
-    await Gate.start()
-    await SignalsHub.start()
-    await TradingBot.start()
-    await CLI.start()
-    await GateMonitor.start(ui.balance)
-    await OperationsMonitor.start(ui.operation)
-  } catch (e) {
-    ui.console.print('Error during initialization', (e as any)?.message)
-  }
+  validateConfig()
+  await Console.start()
+  await VersionCheck.start()
+  await Gate.start()
+  await SignalsHub.start()
+  await TradingBot.start()
+  await CLI.start()
+  await GateMonitor.start()
+  await OperationsMonitor.start()
 }
 
-void init()
+init().catch(e => { throw e })

@@ -1,18 +1,15 @@
-import { getTimeAsHHMMSS } from '@/lib/date'
-import { ConsoleUI } from '@/ui/console'
+import { ui } from './../../ui/index'
 
 export class Console {
-  private static consoleUI: ConsoleUI
-
-  static async start(consoleUI: ConsoleUI) {
-    this.consoleUI = consoleUI
+  static async start() {
+    //
   }
 
   public static log(...args: (number | string | boolean | object | null)[]) {
-    this.consoleUI.print(...args)
+    ui.console.print(...args)
   }
 
   public static clear() {
-    this.consoleUI.clear()
+    ui.console.clear()
   }
 }
