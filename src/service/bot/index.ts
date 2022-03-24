@@ -89,7 +89,9 @@ class TradingBotService {
   ): Promise<void> {
     const assetPair: AssetPair = `${symbol}_USDT`
 
-    Console.log(`Creating new operation with ${assetPair} (${budget.amount}${budget.unit})`)
+    Console.log(
+      `Creating new operation with ${assetPair} (${budget.amount}${budget.unit === 'percentage' ? '%' : '$'})`
+    )
 
     /**
      * 
@@ -129,7 +131,7 @@ class TradingBotService {
      * 
      */
     if (this.operations[assetPair]) {
-      Console.log(`There is another ongoing Operation for ${assetPair} [ABORTED]`)
+      Console.log(`There is another ongoing Operation for ${assetPair}[ABORTED]`)
       this.isCreatingAnotherOperation = false
       return
     }
@@ -171,7 +173,7 @@ class TradingBotService {
      * 
      */
     if (operationBudget > availableUSDTBalance) {
-      Console.log(`Requested amount is greater than available amount in USDT(${availableUSDTBalance}) [ABORTED]`)
+      Console.log(`Requested amount is greater than available amount in USDT(${availableUSDTBalance})[ABORTED]`)
       this.isCreatingAnotherOperation = false
       return
     }
