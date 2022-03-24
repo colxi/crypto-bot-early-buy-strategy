@@ -43,52 +43,43 @@ class TradingBotService {
     initializeLogsDirectory()
 
     SignalsHub.subscribe('connection', async (event) => {
-      const address = event.detail.address
-      Console.log('[SIGNALS_HUB] New connection', address)
+      const address = event.detail.address.includes('::ffff:')
+        ? event.detail.address.substr(7)
+        : event.detail.address
+      Console.log('New connection', address)
     })
 
     SignalsHub.subscribe('message', async (event) => {
       const data = event.detail
       const timeSinceEmissionInMillis = Date.now() - data.messageTime
       Console.log('--------------')
-      Console.log('[SIGNALS_HUB] New message!', `(${Date.now()})`)
-      Console.log('[SIGNALS_HUB] Message type:', data.type)
-      Console.log('[SIGNALS_HUB] Message from:', data.serverName)
-      Console.log('[SIGNALS_HUB] Message asset:', data.assetName)
-      Console.log('[SIGNALS_HUB] Announcement LAG:', timeSinceEmissionInMillis)
-      Console.log('[SIGNALS_HUB] Sending LAG:', Date.now() - data.sendTime)
-      Console.log('[SIGNALS_HUB] Message creation time:', data.messageTime)
+      Console.log('New message!')
+      Console.log('Message type:', data.type)
+      Console.log('Message from:', data.serverName)
+      Console.log('Message asset:', data.assetName)
+      Console.log('Announcement LAG:', timeSinceEmissionInMillis)
+      Console.log('Sending LAG:', Date.now() - data.sendTime)
       Console.log('--------------')
-      const symbol = data.assetName
-      const assetPair: AssetPair = `${symbol}_USDT`
 
       // Block if signal is too old
       if (timeSinceEmissionInMillis > config.signalHub.maxSignalAgeInMillis) {
-        Console.log(`[SIGNALS_HUB] Signal for ${data.assetName} is too old ${Math.ceil(timeSinceEmissionInMillis / 1000)} seconds. Ignoring`)
-        return
-      }
-      // Block if asset is not available or is not tradeable
-      if (!Gate.assetPairs[assetPair]) {
-        Console.log(`[SIGNALS_HUB] Symbol ${data.assetName} not found on Gate.io.Ignoring signal`)
-        return
-      }
-      if (!Gate.assetPairs[assetPair].tradeStatus) {
-        Console.log(`[SIGNALS_HUB] Symbol ${data.assetName} found on Gate.io but is not tradeable.Ignoring signal`)
+        Console.log(`Signal for ${data.assetName} is too old ${Math.ceil(timeSinceEmissionInMillis / 1000)} seconds. Ignoring`)
         return
       }
 
+      // Block if signal is a test
       if (data.type === 'TEST') {
-        Console.log(`[SIGNALS_HUB] Testing message detected.Ignoring`)
+        Console.log(`Testing message detected.Ignoring`)
         return
       }
+
       await this.createOperation(
-        symbol,
+        data.assetName,
         { amount: config.operation.operationUseBalancePercent, unit: 'percentage' }
       )
     })
 
     Console.log('Listening for new assets announcements...')
-
   }
 
 
@@ -96,24 +87,51 @@ class TradingBotService {
     symbol: SymbolName,
     budget: CreateOperationBudget
   ): Promise<void> {
-    Console.log(`New asset announced: ${symbol} `)
+    this.isCreatingAnotherOperation = true
+    const assetPair: AssetPair = `${symbol}_USDT`
 
+    Console.log(`Creating new operation with ${assetPair}`)
+
+    /**
+     * 
+     * BLOCK if busy creating another operation
+     * 
+     */
     if (this.isCreatingAnotherOperation) {
-      Console.log('Busy creating another operation. Ignoring announcement...')
+      Console.log('Busy creating another operation. [ABORTED]')
+      this.isCreatingAnotherOperation = false
       return
     }
 
-    this.isCreatingAnotherOperation = true
+    /**
+     * 
+     * Block if asset is not available
+     * 
+     */
+    if (!Gate.assetPairs[assetPair]) {
+      Console.log(`AssetPair ${assetPair} not found on Gate.io. [ABORTED]`)
+      this.isCreatingAnotherOperation = false
+      return
+    }
 
+    /**
+     * 
+     *  BLOCK if asset is not  tradeable
+     * 
+     */
+    if (!Gate.assetPairs[assetPair].tradeStatus) {
+      Console.log(`Symbol ${assetPair} found on Gate.io but is not tradeable.[ABORTED]`)
+      this.isCreatingAnotherOperation = false
+      return
+    }
 
     /**
      * 
      * BLOCK if there is another ongoing Operation with the same AssetPair
      * 
      */
-    const assetPair: AssetPair = `${symbol}_USDT`
     if (this.operations[assetPair]) {
-      Console.log(`There is another ongoing Operation for ${assetPair}.Ignoring announcement...`)
+      Console.log(`There is another ongoing Operation for ${assetPair} [ABORTED]`)
       this.isCreatingAnotherOperation = false
       return
     }
@@ -124,7 +142,7 @@ class TradingBotService {
      * 
      */
     if (Object.keys(this.operations).length === config.operation.maxSimultaneousOperations) {
-      Console.log('Max simultaneous operations limit reached. Ignoring announcement...')
+      Console.log('Max simultaneous operations limit reached. [ABORTED]')
       this.isCreatingAnotherOperation = false
       return
     }
@@ -138,7 +156,7 @@ class TradingBotService {
     try {
       availableUSDTBalance = await Gate.geAvailableBalanceUSDT()
     } catch (e) {
-      Console.log('Error ocurred retrieving available USDT balance Gate.io!')
+      Console.log('Error ocurred retrieving available USDT balance Gate.io! [ABORTED]')
       this.isCreatingAnotherOperation = false
       return
     }
@@ -150,12 +168,12 @@ class TradingBotService {
 
 
     /**
-      * 
-      * Block if USDT amount is not available
-      * 
-      */
+     * 
+     * Block if USDT amount is not available
+     * 
+     */
     if (operationBudget > availableUSDTBalance) {
-      Console.log(`Requested amount is greater than available amount in USDT(${availableUSDTBalance})`)
+      Console.log(`Requested amount is greater than available amount in USDT(${availableUSDTBalance}) [ABORTED]`)
       this.isCreatingAnotherOperation = false
       return
     }
@@ -194,7 +212,6 @@ class TradingBotService {
      */
     this.isCreatingAnotherOperation = false
   }
-
 }
 
 
