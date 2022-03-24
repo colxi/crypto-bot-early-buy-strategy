@@ -89,7 +89,7 @@ class TradingBotService {
   ): Promise<void> {
     const assetPair: AssetPair = `${symbol}_USDT`
 
-    Console.log(`Creating new operation with ${assetPair}`)
+    Console.log(`Creating new operation with ${assetPair} (${budget.amount}${budget.unit})`)
 
     /**
      * 
