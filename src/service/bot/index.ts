@@ -87,7 +87,6 @@ class TradingBotService {
     symbol: SymbolName,
     budget: CreateOperationBudget
   ): Promise<void> {
-    this.isCreatingAnotherOperation = true
     const assetPair: AssetPair = `${symbol}_USDT`
 
     Console.log(`Creating new operation with ${assetPair}`)
@@ -99,9 +98,8 @@ class TradingBotService {
      */
     if (this.isCreatingAnotherOperation) {
       Console.log('Busy creating another operation. [ABORTED]')
-      this.isCreatingAnotherOperation = false
       return
-    }
+    } else this.isCreatingAnotherOperation = true
 
     /**
      * 
