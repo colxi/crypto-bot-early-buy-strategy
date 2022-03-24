@@ -111,7 +111,7 @@ class TradingBotService {
      * BLOCK if there is another ongoing Operation with the same AssetPair
      * 
      */
-    const assetPair: AssetPair = `${symbol} _USDT`
+    const assetPair: AssetPair = `${symbol}_USDT`
     if (this.operations[assetPair]) {
       Console.log(`There is another ongoing Operation for ${assetPair}.Ignoring announcement...`)
       this.isCreatingAnotherOperation = false
