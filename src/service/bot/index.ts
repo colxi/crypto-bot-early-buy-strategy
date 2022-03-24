@@ -90,7 +90,7 @@ class TradingBotService {
     const assetPair: AssetPair = `${symbol}_USDT`
 
     Console.log(
-      `Creating new operation with ${assetPair} (${budget.amount}${budget.unit === 'percentage' ? '%' : '$'})`
+      `Creating new operation with ${assetPair} (budget=${budget.amount}${budget.unit === 'percentage' ? '%' : '$'})`
     )
 
     /**
