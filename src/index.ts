@@ -43,9 +43,11 @@ async function checkWinQuickMode() {
             'reg add HKCU\\Console /v QuickEdit /t REG_DWORD /d 0 /f',
             (error, stdout) => {
               Console.log('QuickMode successfully DISABLED!')
-              Console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-              Console.log('Please close the Terminal and restart the BOT for changes to make effect')
-              Console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+              Console.log('******************************************')
+              Console.log('*                                        *')
+              Console.log('* RESTART THE TERMINAL BEFORE CONTINUING *')
+              Console.log('*                                        *')
+              Console.log('******************************************')
               resolve(true)
             }
           )
