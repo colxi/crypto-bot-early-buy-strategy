@@ -34,6 +34,7 @@ async function checkWinQuickMode() {
     const isWin = process.platform === "win32"
     if (!isWin) return
     /* eslint-disable */
+    Console.log('Checking Windows Terminal QuickMode...')
     exec(
       'reg add HKCU\Console /v QuickEdit ',
       (error, stdout, stderr) => {
