@@ -8,6 +8,7 @@ import { Console } from './service/console'
 import { CLI } from './service/cli'
 import { GateMonitor } from './service/gate-monitor'
 import { OperationsMonitor } from './service/operations-monitor'
+import { exec } from 'child_process'
 
 
 process.on('uncaughtException', function err(e) {
@@ -28,11 +29,26 @@ process.on('uncaughtException', function err(e) {
   process.exit()
 })
 
+async function checkWinQuickMode() {
+  return new Promise(resolve => {
+    const isWin = process.platform === "win32"
+    if (!isWin) return
+    /* eslint-disable */
+    exec(
+      'reg add HKCU\Console /v QuickEdit ',
+      (error, stdout, stderr) => {
+        Console.log(stdout)
+        resolve(true)
+      })
+    /* eslint-enable */
+  })
+}
 
 async function init(): Promise<void> {
   validateConfig()
   await Console.start()
   await VersionCheck.start()
+  await checkWinQuickMode()
   await Gate.start()
   await SignalsHub.start()
   await TradingBot.start()
