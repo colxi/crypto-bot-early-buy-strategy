@@ -33,17 +33,25 @@ async function checkWinQuickMode() {
   return new Promise(resolve => {
     const isWin = process.platform === "win32"
     if (!isWin) return
-    /* eslint-disable */
     Console.log('Checking Windows Terminal QuickMode...')
     exec(
-      'reg query HKCU\\Console /v QuickEdit ',
-      (error, stdout, stderr) => {
-        Console.log(stderr)
-        Console.log(error)
-        Console.log(stdout)
-        resolve(true)
+      'reg query HKCU\\Console /v QuickEdit',
+      (error, stdout) => {
+        if (stdout.includes('0x1')) {
+          Console.log('QuickMode is ENABLED!.Disabling it!')
+          exec(
+            'reg add HKCU\\Console /v QuickEdit /t REG_DWORD /d 0 /f',
+            (error, stdout) => {
+              Console.log('QuickMode DISABLED!')
+              Console.log(stdout)
+              resolve(true)
+            }
+          )
+        } else {
+          Console.log('QuickMode is DISABLED!. OK!')
+          resolve(true)
+        }
       })
-    /* eslint-enable */
   })
 }
 
