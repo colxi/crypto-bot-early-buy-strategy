@@ -36,7 +36,7 @@ async function checkWinQuickMode() {
     /* eslint-disable */
     Console.log('Checking Windows Terminal QuickMode...')
     exec(
-      'reg add HKCU\Console /v QuickEdit ',
+      'reg add HKCU\\Console /v QuickEdit ',
       (error, stdout, stderr) => {
         Console.log(stdout)
         resolve(true)
