@@ -45,5 +45,6 @@ export interface BotConfig {
     retryPercentModifier: number
     retryPercentModifierLimit: number
     stopOnPendingAmountUSD: number
+    maxAttempts: number
   }
 }

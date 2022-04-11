@@ -200,7 +200,7 @@ export class Operation extends EventedService<ServiceEvents> {
         this.logger.error(' - EMERGENCY SELL order creation failed!')
         this.logger.error(` - ERROR DETAILS : ${Gate.getGateResponseError(e)}`)
       }
-      if (attemptCounter > 100) {
+      if (attemptCounter > config.emergencySell.maxAttempts) {
         this.logger.error('Maximum Emergency sell attempts!')
         Console.log('Maximum Emergency sell attempts!')
         break
