@@ -192,7 +192,7 @@ export class Operation extends EventedService<ServiceEvents> {
         this.amountPendingToSell -= Number(effectiveAmount)
         const pendingAmountInUSD = this.lastAssetPairPrice * this.amountPendingToSell
         this.emergencySellOrders.push(order)
-        this.logger.error(`Pending to sell : ${this.amountPendingToSell}`)
+        this.logger.error(`Pending to sell : ${this.amountPendingToSell} (${pendingAmountInUSD} USD)`)
         Console.log(`Pending to sell : ${this.amountPendingToSell} (${pendingAmountInUSD} USD)`)
         // if pending amount in USD is lowe than value set in config, end!
         if (pendingAmountInUSD < config.emergencySell.stopOnPendingAmountUSD) break
