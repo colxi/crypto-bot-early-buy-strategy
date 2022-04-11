@@ -70,17 +70,17 @@ export async function createEmergencySellOrder(
   })
   const order: GateOrderDetails = response.data
 
-  /**
-   * 
-   * BLOCK if order has not been fulfilled 
-   * 
-   */
-  if (order.status !== Order.Status.Closed) {
-    throw new OperationError(
-      `EMERGENCY SELL order not executed "${assetPair}"`,
-      { code: OperationErrorCode.EMERGENCY_SEL_ORDER_NOT_EXECUTED, status: order.status }
-    )
-  }
+  // /**
+  //  * 
+  //  * BLOCK if order has not been fulfilled 
+  //  * 
+  //  */
+  // if (order.status !== Order.Status.Closed) {
+  //   throw new OperationError(
+  //     `EMERGENCY SELL order not executed "${assetPair}"`,
+  //     { code: OperationErrorCode.EMERGENCY_SEL_ORDER_NOT_EXECUTED, status: order.status }
+  //   )
+  // }
 
   /**
    * 
