@@ -192,9 +192,10 @@ export class Operation extends EventedService<ServiceEvents> {
         if (isCancelled && !fillPrice) throw new Error(`EMERGENCY SELL status = ${order.status}`)
         this.emergencySellOrders.push(order)
         // order succeeded! calculate sold amount
-        const effectiveAmount = toFixed(Number(order.amount) - Number(order.left) - Number(order.fee), amountPrecision)
+        const effectiveAmount = toFixed(Number(order.amount) - Number(order.left), amountPrecision)
         Console.log(`EmergencySell, sold ${effectiveAmount}${this.symbol} of ${this.amountPendingToSell} ${this.symbol}`)
         this.logger.info(`EmergencySell, sold ${effectiveAmount} of ${this.amountPendingToSell} ${this.symbol}`)
+
         this.amountPendingToSell -= Number(effectiveAmount)
         const pendingAmountInUSD = this.lastAssetPairPrice * this.amountPendingToSell
         this.logger.error(`Pending to sell : ${this.amountPendingToSell} (${pendingAmountInUSD} USD)`)
