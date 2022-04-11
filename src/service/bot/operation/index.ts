@@ -184,28 +184,23 @@ export class Operation extends EventedService<ServiceEvents> {
         // Order Error handling
         const fillPrice = Number(order.fill_price)
         const isCancelled = order.status === Order.Status.Cancelled
-        Console.log(`EmergencySell status : ${order.status}`)
-        Console.log(`EmergencySell fillPrice : ${fillPrice}`)
-        Console.log(`EmergencySell left : ${order.left}`)
-        Console.log(`EmergencySell sold amount : ${order.amount}`)
-        Console.log(`EmergencySell fee : ${order.fee}`)
+        this.logger.log(` - EmergencySell status : ${order.status}`)
+        this.logger.log(` - EmergencySell left : ${order.left} ${this.symbol}`)
+        this.logger.log(` - EmergencySell sold amount : ${order.amount} ${this.symbol}`)
+        this.logger.log(` - EmergencySell fee : ${order.fee} ${this.symbol}`)
         if (isCancelled && !fillPrice) throw new Error(`EMERGENCY SELL status = ${order.status}`)
         this.emergencySellOrders.push(order)
         // order succeeded! calculate sold amount
         const effectiveAmount = toFixed(Number(order.amount) - Number(order.left), amountPrecision)
-        Console.log(`EmergencySell, sold ${effectiveAmount}${this.symbol} of ${this.amountPendingToSell} ${this.symbol}`)
         this.logger.info(`EmergencySell, sold ${effectiveAmount} of ${this.amountPendingToSell} ${this.symbol}`)
-
-        this.amountPendingToSell -= Number(effectiveAmount)
+        this.amountPendingToSell = Number(toFixed(this.amountPendingToSell - Number(effectiveAmount), amountPrecision))
         const pendingAmountInUSD = this.lastAssetPairPrice * this.amountPendingToSell
-        this.logger.error(`Pending to sell : ${this.amountPendingToSell} (${pendingAmountInUSD} USD)`)
-        Console.log(`Pending to sell : ${this.amountPendingToSell} (${pendingAmountInUSD} USD)`)
-        // if pending amount in USD is lowe than value set in config, end!
+        this.logger.info(`Pending to sell : ${this.amountPendingToSell} (${pendingAmountInUSD} USD)`)
+        // if pending amount in USD is lower than value set in config, end!
         if (pendingAmountInUSD < config.emergencySell.stopOnPendingAmountUSD) break
       } catch (e) {
         this.logger.error(' - EMERGENCY SELL order creation failed!')
         this.logger.error(` - ERROR DETAILS : ${Gate.getGateResponseError(e)}`)
-        Console.log(` - ERROR DETAILS : ${Gate.getGateResponseError(e)}`)
         currentPricePercentModifier += config.emergencySell.retryPercentModifier
         if (currentPricePercentModifier < config.emergencySell.retryPercentModifierLimit) {
           currentPricePercentModifier = config.emergencySell.retryPercentModifierLimit
