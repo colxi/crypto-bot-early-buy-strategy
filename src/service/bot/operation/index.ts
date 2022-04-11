@@ -205,13 +205,14 @@ export class Operation extends EventedService<ServiceEvents> {
       } catch (e) {
         this.logger.error(' - EMERGENCY SELL order creation failed!')
         this.logger.error(` - ERROR DETAILS : ${Gate.getGateResponseError(e)}`)
+        Console.log(` - ERROR DETAILS : ${Gate.getGateResponseError(e)}`)
         currentPricePercentModifier += config.emergencySell.retryPercentModifier
         if (currentPricePercentModifier < config.emergencySell.retryPercentModifierLimit) {
           currentPricePercentModifier = config.emergencySell.retryPercentModifierLimit
         }
       }
       if (attemptCounter > config.emergencySell.maxAttempts) {
-        this.logger.error('Maximum Emergency sell attempts!')
+        this.logger.error(' - Maximum Emergency sell attempts!')
         Console.log('Maximum Emergency sell attempts!')
         break
       }
