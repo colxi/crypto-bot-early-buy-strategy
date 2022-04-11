@@ -188,13 +188,13 @@ export class Operation extends EventedService<ServiceEvents> {
         // order succeeded! calculate sold amount
         const effectiveAmount = toFixed(Number(order.amount) - Number(order.left) + Number(order.fee), amountPrecision)
         Console.log(`EmergencySell, sold ${effectiveAmount}${this.symbol} of ${this.amountPendingToSell}${this.symbol}`)
-        this.logger.info(`EmergencySell, sold ${effectiveAmount}${this.symbol} of ${this.amountPendingToSell}${this.symbol}`)
+        this.logger.info(`EmergencySell, sold ${effectiveAmount} of ${this.amountPendingToSell} ${this.symbol}`)
         this.amountPendingToSell -= Number(effectiveAmount)
+        const pendingAmountInUSD = this.lastAssetPairPrice * this.amountPendingToSell
         this.emergencySellOrders.push(order)
         this.logger.error(`Pending to sell : ${this.amountPendingToSell}`)
-        Console.log(`Pending to sell : ${this.amountPendingToSell}`)
+        Console.log(`Pending to sell : ${this.amountPendingToSell} (${pendingAmountInUSD} USD)`)
         // if pending amount in USD is lowe than value set in config, end!
-        const pendingAmountInUSD = this.lastAssetPairPrice * this.amountPendingToSell
         if (pendingAmountInUSD < config.emergencySell.stopOnPendingAmountUSD) break
       } catch (e) {
         this.logger.error(' - EMERGENCY SELL order creation failed!')
