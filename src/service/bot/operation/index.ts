@@ -188,8 +188,10 @@ export class Operation extends EventedService<ServiceEvents> {
         // order succeeded! calculate sold amount
         const effectiveAmount = toFixed(Number(order.amount) - Number(order.left) - Number(order.fee), amountPrecision)
         Console.log(`EmergencySell, sold ${effectiveAmount}${this.symbol} of ${this.amountPendingToSell}${this.symbol}`)
+        this.logger.info(`EmergencySell, sold ${effectiveAmount}${this.symbol} of ${this.amountPendingToSell}${this.symbol}`)
         this.amountPendingToSell -= Number(effectiveAmount)
         this.emergencySellOrders.push(order)
+        this.logger.error(`Pending to sell : ${this.amountPendingToSell}`)
         Console.log(`Pending to sell : ${this.amountPendingToSell}`)
         // if pending amount in USD is lowe than value set in config, end!
         const pendingAmountInUSD = this.lastAssetPairPrice * this.amountPendingToSell
@@ -197,6 +199,11 @@ export class Operation extends EventedService<ServiceEvents> {
       } catch (e) {
         this.logger.error(' - EMERGENCY SELL order creation failed!')
         this.logger.error(` - ERROR DETAILS : ${Gate.getGateResponseError(e)}`)
+      }
+      if (attemptCounter > 30) {
+        this.logger.error('Maximum Emergency sell attempts!')
+        Console.log('Maximum Emergency sell attempts!')
+        break
       }
       attemptCounter++
       currentPricePercentModifier += config.emergencySell.retryPercentModifier
