@@ -25,6 +25,7 @@ import { hasFulfilledTriggeredOrder } from './has-fulfilled-triggered-order'
 import { sendEmail } from '../send-email'
 import { Gate } from '@/service/gate-client'
 import { Console } from '@/service/console'
+import { toFixed } from '@/lib/math'
 
 let lastOperationId: number = 0
 
@@ -47,10 +48,11 @@ export class Operation extends EventedService<ServiceEvents> {
     this.lastAssetPairPrice = Number(buyOrderDetails.originalAssetPrice)
     this.assetAllTimeLow = Number(buyOrderDetails.originalAssetPrice)
     this.assetAllTimeHigh = Number(buyOrderDetails.originalAssetPrice)
+    this.amountPendingToSell = Number(buyOrderDetails.amount)
     this.startTime = startTime
     this.logger = logger
     this.buyOrderDetails = buyOrderDetails
-    this.emergencySellOrder = null
+    this.emergencySellOrders = []
     this.takeProfitTriggeredOrderDetails = null
     this.stopLossTriggeredOrderDetails = null
     this.operationStatus = OperationStatus.ACTIVE
@@ -72,13 +74,14 @@ export class Operation extends EventedService<ServiceEvents> {
   public lastAssetPairPrice: number
   public assetAllTimeLow: number
   public assetAllTimeHigh: number
+  public amountPendingToSell: number
 
   // TIMERS
   private priceTrackingTimer: NodeJS.Timeout | undefined
   private operationTrackingTimer: NodeJS.Timeout | undefined
 
   // ORDERS
-  public emergencySellOrder: GateOrderDetails | null
+  public emergencySellOrders: GateOrderDetails[]
   public takeProfitTriggeredOrderDetails: OperationTriggeredOrderDetails | null
   public stopLossTriggeredOrderDetails: OperationTriggeredOrderDetails | null
   public buyOrderDetails: OperationBuyOrderDetails
@@ -172,23 +175,33 @@ export class Operation extends EventedService<ServiceEvents> {
     // sendEmail('EMERGENCY SELL order required.').catch((e) => { this.logger.error('Error sending EMERGENCY SELL email', e) })
 
     let attemptCounter = 0
-    let currentPercentModifier = 0
+    let currentPricePercentModifier = 0
+    const amountPrecision = Gate.assetPairs[this.assetPair].amountPrecision!
     while (true) {
       this.logger.error(` - Creating EMERGENCY SELL order (Attempt ${attemptCounter})...`)
       try {
-        await this.createEmergencySellOrder(currentPercentModifier)
-        if (this.emergencySellOrder?.status === Order.Status.Closed) break
-        else {
-          throw new Error(`EMERGENCY SELL status = ${this.emergencySellOrder?.status}`)
-        }
+        const order = await this.createEmergencySellOrder(this.amountPendingToSell, currentPricePercentModifier)
+        // Order Error handling
+        const fillPrice = Number(order.fill_price)
+        const isCancelled = order.status === Order.Status.Cancelled
+        if (isCancelled && !fillPrice) throw new Error(`EMERGENCY SELL status = ${order.status}`)
+        // order succeeded! calculate sold amount
+        const effectiveAmount = toFixed(Number(order.amount) - Number(order.left) - Number(order.fee), amountPrecision)
+        Console.log(`EmergencySell, sold ${effectiveAmount}${this.symbol} of ${this.amountPendingToSell}${this.symbol}`)
+        this.amountPendingToSell -= Number(effectiveAmount)
+        this.emergencySellOrders.push(order)
+        Console.log(`Pending to sell : ${this.amountPendingToSell}`)
+        // if pending amount in USD is lowe than value set in config, end!
+        const pendingAmountInUSD = this.lastAssetPairPrice * this.amountPendingToSell
+        if (pendingAmountInUSD < config.emergencySell.stopOnPendingAmountUSD) break
       } catch (e) {
         this.logger.error(' - EMERGENCY SELL order creation failed!')
         this.logger.error(` - ERROR DETAILS : ${Gate.getGateResponseError(e)}`)
       }
       attemptCounter++
-      currentPercentModifier += config.emergencySell.retryPercentModifier
-      if (currentPercentModifier < config.emergencySell.retryPercentModifierLimit) {
-        currentPercentModifier = config.emergencySell.retryPercentModifierLimit
+      currentPricePercentModifier += config.emergencySell.retryPercentModifier
+      if (currentPricePercentModifier < config.emergencySell.retryPercentModifierLimit) {
+        currentPricePercentModifier = config.emergencySell.retryPercentModifierLimit
       }
     }
 
@@ -238,13 +251,13 @@ export class Operation extends EventedService<ServiceEvents> {
   }
 
 
-  private async createEmergencySellOrder(modifier: number = 0): Promise<void> {
-    this.emergencySellOrder = await createEmergencySellOrder(
+  private async createEmergencySellOrder(amount: number, modifier: number): Promise<GateOrderDetails> {
+    return await createEmergencySellOrder(
       this.symbol,
       this.assetPair,
       this.startTime,
       this.buyOrderDetails.buyPrice,
-      this.buyOrderDetails.amount,
+      String(amount),
       this.logger,
       modifier
     )

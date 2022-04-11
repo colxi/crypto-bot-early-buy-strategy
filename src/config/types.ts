@@ -44,5 +44,6 @@ export interface BotConfig {
     sellDistancePercent: number
     retryPercentModifier: number
     retryPercentModifierLimit: number
+    stopOnPendingAmountUSD: number
   }
 }

@@ -66,8 +66,7 @@ export async function createEmergencySellOrder(
     side: Order.Side.Sell,
     amount: sellAmount,
     price: sellPrice,
-    // TODO : check if IoC would work here
-    timeInForce: Order.TimeInForce.Fok
+    timeInForce: Order.TimeInForce.Ioc
   })
   const order: GateOrderDetails = response.data
 
