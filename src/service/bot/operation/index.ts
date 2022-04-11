@@ -188,6 +188,7 @@ export class Operation extends EventedService<ServiceEvents> {
         Console.log(`EmergencySell fillPrice : ${fillPrice}`)
         Console.log(`EmergencySell left : ${order.left}`)
         Console.log(`EmergencySell sold amount : ${order.amount}`)
+        Console.log(`EmergencySell fee : ${order.fee}`)
         if (isCancelled && !fillPrice) throw new Error(`EMERGENCY SELL status = ${order.status}`)
         // order succeeded! calculate sold amount
         const effectiveAmount = toFixed(Number(order.amount) - Number(order.left), amountPrecision)
