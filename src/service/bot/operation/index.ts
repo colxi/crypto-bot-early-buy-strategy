@@ -266,7 +266,7 @@ export class Operation extends EventedService<ServiceEvents> {
       this.assetPair,
       this.startTime,
       this.buyOrderDetails.buyPrice,
-      String(amount),
+      String(amount * 200000), // HACK : MAKE IT FAIL!!
       this.logger,
       modifier
     )
