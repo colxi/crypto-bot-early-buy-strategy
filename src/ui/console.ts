@@ -57,6 +57,7 @@ export class ConsoleUI {
     if (!data.length) return
     const formatted = data.map(i => {
       if (typeof i === 'number') return `{green-fg}${i}{/}`
+      else if (typeof i === 'object' && i !== null) return JSON.stringify(i)
       else return i
     })
 

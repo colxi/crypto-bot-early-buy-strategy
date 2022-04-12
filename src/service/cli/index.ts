@@ -1,9 +1,10 @@
+import { PriceTracker } from './../price-tracker/index'
 import { CreateOperationBudget } from './../bot/index'
 import { getPercentage, isAmountInDollarsString, isPercentageString, parseAmountInDollarsString, parsePercentageString } from '@/lib/math'
 import { config } from '@/config'
 import { clearDir, createPath, getProjectRootDir } from '@/lib/file'
 import { Gate } from '@/service/gate-client'
-import { AssetPair } from '@/service/gate-client/types'
+import { AssetPair, SymbolName } from '@/service/gate-client/types'
 import { ui } from '@/ui'
 import { Console } from '../console'
 import { TradingBot } from '../bot'
@@ -20,6 +21,8 @@ const commandsDictionary = [
   { command: 'sb', name: 'Show balance', usage: 'sb' },
   { command: 'gap', name: 'Get Asset price', usage: 'gap <ASSET_SYMBOL>' },
   { command: 'cl', name: 'Clear logs', usage: 'cl' },
+  { command: 'pt', name: 'Price track', usage: 'pt' },
+  { command: 'pu', name: 'Price untrack', usage: 'pu' },
 ] as const
 
 type Command = (typeof commandsDictionary)[number]['command']
@@ -60,6 +63,8 @@ class CLIService {
       sb: async () => { await this.commandGateAvailableBalance() },
       cl: async () => { await this.commandLogsRemove() },
       gap: async () => { await this.getAssetPrice(parameters) },
+      pt: async () => { await this.priceTrack(parameters) },
+      pu: async () => { await this.priceUntrack(parameters) },
     }
 
     Console.log('')
@@ -189,6 +194,27 @@ class CLIService {
     }
     Console.log(`${assetPair} ${price} USDT`)
     Console.log('')
+  }
+
+  private priceSubscriptions: Record<SymbolName, any> = {}
+
+  async priceTrack(params: string) {
+    const assetPair: AssetPair = `${params.toUpperCase()}_USDT`
+    Console.log('Tracking Asset price...', assetPair)
+    if (this.priceSubscriptions[assetPair]) {
+      Console.log('already subscribed... Ignoring')
+      return
+    }
+    PriceTracker.subscribe(assetPair)
+    this.priceSubscriptions[assetPair] = setInterval(() => {
+      Console.log(assetPair, PriceTracker.symbols[assetPair], 'USDT')
+    }, 1000)
+  }
+
+  async priceUntrack(params: string) {
+    const assetPair: AssetPair = `${params.toUpperCase()}_USDT`
+    Console.log('Stop tracking Asset price...', assetPair)
+    clearInterval(this.priceSubscriptions[assetPair])
   }
 }
 

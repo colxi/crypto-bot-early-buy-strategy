@@ -1,3 +1,4 @@
+import { PriceTracker } from './service/price-tracker/index'
 import { VersionCheck } from './service/version-check/index'
 import { SignalsHub } from './service/signals-hub'
 import { Gate } from './service/gate-client'
@@ -62,14 +63,15 @@ async function checkWinQuickMode() {
 async function init(): Promise<void> {
   validateConfig()
   await Console.start()
-  await VersionCheck.start()
-  await checkWinQuickMode()
+  // await VersionCheck.start()
+  // await checkWinQuickMode()
   await Gate.start()
   await SignalsHub.start()
   await TradingBot.start()
   await CLI.start()
   await GateMonitor.start()
   await OperationsMonitor.start()
+  await PriceTracker.start()
 }
 
 init().catch(e => { throw e })
