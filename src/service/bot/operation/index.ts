@@ -1,3 +1,4 @@
+import { PriceTracker } from './../../price-tracker/index'
 import { config } from '@/config'
 import { Order } from 'gate-api'
 import { getDateAsDDMMYYYY, getTimeAsHHMMSS } from '../../../lib/date'
@@ -154,6 +155,7 @@ export class Operation extends EventedService<ServiceEvents> {
 
     this.logger.warning('Stopping price tracking')
     clearTimeout(this.priceTrackingTimer!)
+    PriceTracker.unsubscribe(this.symbol).catch(() => Console.log('Failed unsubscribing', this.symbol))
 
     this.logger.lineBreak()
     this.logger.log('- Operation finished')
@@ -300,6 +302,9 @@ export class Operation extends EventedService<ServiceEvents> {
   * ----------------------------------------------------------------------------------------------*/
 
   private startContextTracking() {
+    PriceTracker.subscribe(this.symbol).catch((e) => {
+      Console.log('Failure on "PriceTracker.subscribe"')
+    })
     this.operationTrackingTimer = setInterval(
       () => { this.trackOperationOrders().catch(() => Console.log('Failure on "trackOperationOrders"')) },
       config.operation.orderTrackingIntervalInMillis
@@ -321,6 +326,7 @@ export class Operation extends EventedService<ServiceEvents> {
       this.storeAssetPrice(assetPairPrice)
       if (this.operationStatus !== OperationStatus.FINISHED) {
         this.logger.info(this.assetPair, 'AssetPair Price : ', assetPairPrice)
+        this.logger.info(this.assetPair, 'AssetPair Price : ', PriceTracker.symbols[this.symbol], '(Socket)')
       }
     } catch (e) {
       this.logger.error('Error tracking assetPairPrice', this.buyOrderDetails.id, Gate.getGateResponseError(e))

@@ -50,7 +50,7 @@ class CLIService {
   private async interpreter(input: string) {
     if (!input.trim()) return
     const [command, ...params] = input.split(' ')
-    const parameters = params.join(' ')
+    const parameters = params.join(' ').trim()
 
     const handlers: Record<Command, any> = {
       q: async () => { await this.commandQuit() },
@@ -196,25 +196,42 @@ class CLIService {
     Console.log('')
   }
 
-  private priceSubscriptions: Record<SymbolName, any> = {}
+  /** 
+   * 
+   * PRICE TRACKING METHODS 
+   * 
+   */
+
+  private trackedSymbolsTimers: Record<SymbolName, any> = {}
 
   async priceTrack(params: string) {
-    const assetPair: AssetPair = `${params.toUpperCase()}_USDT`
-    Console.log('Tracking Asset price...', assetPair)
-    if (this.priceSubscriptions[assetPair]) {
-      Console.log('already subscribed... Ignoring')
+    const symbolName: SymbolName = params.toUpperCase()
+    Console.log('Tracking Asset price...', symbolName)
+    if (symbolName in this.trackedSymbolsTimers) {
+      Console.log('Already being tracked... Ignoring')
       return
     }
-    PriceTracker.subscribe(assetPair)
-    this.priceSubscriptions[assetPair] = setInterval(() => {
-      Console.log(assetPair, PriceTracker.symbols[assetPair], 'USDT')
+    try {
+      await PriceTracker.subscribe(symbolName)
+    } catch (e) {
+      Console.log(`Asset does not exit in Gate (${symbolName})`)
+      return
+    }
+
+    this.trackedSymbolsTimers[symbolName] = setInterval(() => {
+      Console.log(symbolName, PriceTracker.symbols[symbolName], 'USDT')
     }, 1000)
   }
 
   async priceUntrack(params: string) {
-    const assetPair: AssetPair = `${params.toUpperCase()}_USDT`
-    Console.log('Stop tracking Asset price...', assetPair)
-    clearInterval(this.priceSubscriptions[assetPair])
+    const symbolName: SymbolName = params.toUpperCase()
+    if (!(symbolName in this.trackedSymbolsTimers)) {
+      Console.log('Asset not being tracked... Ignoring')
+      return
+    }
+    Console.log('Stop tracking Asset price...', symbolName)
+    clearInterval(this.trackedSymbolsTimers[symbolName])
+    await PriceTracker.unsubscribe(symbolName)
   }
 }
 
