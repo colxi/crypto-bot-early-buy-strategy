@@ -8,11 +8,6 @@ import {
 } from './types'
 
 
-type ServiceEvents = {
-  message: (event: WebsocketMessageEvent) => void
-  connect: (event: WebsocketConnectionEvent) => void
-}
-
 export class WebsocketMessageEvent extends CustomEvent<{
   context: WebsocketConnection,
   message: Record<string, unknown> | string
@@ -22,6 +17,10 @@ export class WebsocketConnectionEvent extends CustomEvent<{
   context: WebsocketConnection,
 }>{ }
 
+type ServiceEvents = {
+  message: (event: WebsocketMessageEvent) => void | Promise<void>
+  connect: (event: WebsocketConnectionEvent) => void | Promise<void>
+}
 
 export default class WebsocketConnection extends EventedService<ServiceEvents>{
   constructor(config: WebsocketConnectionConfig) {
