@@ -3,6 +3,7 @@ import { Gate } from './../gate-client/index'
 import { AssetPair, SymbolName } from '@/service/gate-client/types'
 import { Console } from '@/service/console'
 import WebsocketConnection, { WebsocketMessageEvent } from '@/lib/websocket'
+import { config } from '@/config'
 
 
 export class PriceTrackerService {
@@ -50,8 +51,8 @@ export class PriceTrackerService {
   async onOrderBookTickerUpdate(msg: any): Promise<void> {
     const symbolName = msg.result.s.split('_')[0]
     const price = Number(msg.result.b)
-    const volume = Number(msg.result.B)
-    Console.log(`${price} USD (vol=${volume} ${symbolName} / ${toFixed(volume * price, 2)} USD)`)
+    const isTrackingSymbol = symbolName in this.symbols
+    if (isTrackingSymbol) this.symbols[symbolName] = price
   }
 
   async onTickerUpdate(assetPair: string, last: string): Promise<void> {
@@ -68,7 +69,7 @@ export class PriceTrackerService {
       return
     }
     const assetPair: AssetPair = `${symbolName.toUpperCase()}_USDT`
-    Console.log('[PriceTracker] Subscribing to Asset price...', symbolName)
+    Console.log('[PriceTracker] Subscribing to Asset price...', symbolName, `(mode=${config.operation.priceTrackingStrategy})`)
 
     // perform an initial fetch , to ensure value is available just after the call
     try {
@@ -76,21 +77,24 @@ export class PriceTrackerService {
     } catch (e) {
       throw new Error(`[PriceTracker] Asset does not exit in Gate (${symbolName})`)
     }
-    const request = {
-      "time": Date.now(),
-      "channel": "spot.tickers",
-      "event": "subscribe",
-      "payload": [assetPair]
-    }
-    this.ws.send(request)
 
-    const request2 = {
-      "time": Date.now(),
-      "channel": "spot.book_ticker",
-      "event": "subscribe",
-      "payload": [assetPair]
+    if (config.operation.priceTrackingStrategy === 'ORDER_BOOK') {
+      const request2 = {
+        "time": Date.now(),
+        "channel": "spot.book_ticker",
+        "event": "subscribe",
+        "payload": [assetPair]
+      }
+      this.ws.send(request2)
+    } else {
+      const request = {
+        "time": Date.now(),
+        "channel": "spot.tickers",
+        "event": "subscribe",
+        "payload": [assetPair]
+      }
+      this.ws.send(request)
     }
-    this.ws.send(request2)
   }
 
   async unsubscribe(symbolName: SymbolName) {
@@ -99,13 +103,24 @@ export class PriceTrackerService {
 
     const assetPair = `${symbolName.toUpperCase()}_USDT`
     Console.log('[PriceTracker] Unsubscribing from Asset price...', symbolName)
-    const request = {
-      "time": Date.now(),
-      "channel": "spot.tickers",
-      "event": "unsubscribe",
-      "payload": [assetPair]
+
+    if (config.operation.priceTrackingStrategy === 'ORDER_BOOK') {
+      const request2 = {
+        "time": Date.now(),
+        "channel": "spot.book_ticker",
+        "event": "subscribe",
+        "payload": [assetPair]
+      }
+      this.ws.send(request2)
+    } else {
+      const request = {
+        "time": Date.now(),
+        "channel": "spot.tickers",
+        "event": "unsubscribe",
+        "payload": [assetPair]
+      }
+      this.ws.send(request)
     }
-    this.ws.send(request)
   }
 }
 

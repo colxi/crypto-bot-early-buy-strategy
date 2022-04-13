@@ -24,6 +24,7 @@ export interface BotConfig {
     maxSimultaneousOperations: number
     priceTrackingIntervalInMillis: number
     orderTrackingIntervalInMillis: number
+    priceTrackingStrategy: 'ORDER_BOOK' | 'LAST_PRICE'
   },
   buy: {
     fallbackToPartialAfterAttempts: number
