@@ -1,3 +1,4 @@
+import { toFixed } from '@/lib/math'
 import { Gate } from './../gate-client/index'
 import { AssetPair, SymbolName } from '@/service/gate-client/types'
 import { Console } from '@/service/console'
@@ -33,8 +34,9 @@ export class PriceTrackerService {
       return
     }
     const message = event.detail.message as { channel: string, event: string, result: { currency_pair: string, last: string, status?: string } }
-    if (message.channel === 'spot.tickers' && message.event === 'update') {
-      await this.onTickerUpdate(message.result.currency_pair, message.result.last)
+    if (message.event === 'update') {
+      if (message.channel === 'spot.tickers') await this.onTickerUpdate(message.result.currency_pair, message.result.last)
+      else if (message.channel === 'spot.book_ticker') await this.onOrderBookTickerUpdate(message)
     }
     else if (message.result.status === 'success') {
       Console.log(`[PriceTracker] ${message.event} (${message.channel}) = ${message.result.status}`)
@@ -43,6 +45,13 @@ export class PriceTrackerService {
       Console.log('[PriceTracker] Unknown message')
       Console.log(event.detail.message)
     }
+  }
+
+  async onOrderBookTickerUpdate(msg: any): Promise<void> {
+    const symbolName = msg.result.s.split('_')[0]
+    const price = Number(msg.result.b)
+    const volume = Number(msg.result.B)
+    Console.log(`${price} USD (vol=${volume} ${symbolName} / ${toFixed(volume * price, 2)} USD)`)
   }
 
   async onTickerUpdate(assetPair: string, last: string): Promise<void> {
@@ -74,6 +83,14 @@ export class PriceTrackerService {
       "payload": [assetPair]
     }
     this.ws.send(request)
+
+    const request2 = {
+      "time": Date.now(),
+      "channel": "spot.book_ticker",
+      "event": "subscribe",
+      "payload": [assetPair]
+    }
+    this.ws.send(request2)
   }
 
   async unsubscribe(symbolName: SymbolName) {
