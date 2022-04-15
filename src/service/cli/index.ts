@@ -231,6 +231,7 @@ class CLIService {
     }
     Console.log('Stop tracking Asset price...', symbolName)
     clearInterval(this.trackedSymbolsTimers[symbolName])
+    delete this.trackedSymbolsTimers[symbolName]
     await PriceTracker.unsubscribe(symbolName)
   }
 }

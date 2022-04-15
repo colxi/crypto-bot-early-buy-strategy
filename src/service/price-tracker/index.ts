@@ -108,7 +108,7 @@ export class PriceTrackerService {
       const request2 = {
         "time": Date.now(),
         "channel": "spot.book_ticker",
-        "event": "subscribe",
+        "event": "unsubscribe",
         "payload": [assetPair]
       }
       this.ws.send(request2)
