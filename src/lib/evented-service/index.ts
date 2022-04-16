@@ -1,36 +1,26 @@
 import { CustomEvent } from './custom-event'
 import { EventsDictionary } from './types'
 
-export default class EventedService<
-  E_DICTIONARY extends EventsDictionary = EventsDictionary,
-  > {
-  constructor(eventsDictionary: (keyof E_DICTIONARY)[]) {
-    this.#subscribers = eventsDictionary.reduce((acc, eventName) => {
-      acc[eventName] = new Set()
-      return acc
-    }, {} as any)
-
-    this.Event = eventsDictionary.reduce((acc, eventName) => {
-      acc[eventName] = eventName
-      return acc
-    }, {} as any)
-
-    Object.seal(this.Event)
-    Object.freeze(this.Event)
+export default class EventedService<E_DICTIONARY extends EventsDictionary = EventsDictionary> {
+  constructor() {
+    this.#subscribers = {}
   }
-
 
   /**
    * Collection of active subscribers grouped by event name
    */
-  readonly #subscribers: Record<keyof E_DICTIONARY, Set<E_DICTIONARY[keyof E_DICTIONARY]>>
-
+  readonly #subscribers: Record<PropertyKey, Set<E_DICTIONARY[keyof E_DICTIONARY]>>
 
   /**
-   * Enum alike object containing all the event names
+   * 
+   * Get the collection of subscribers for an event. If collections does not yet exist,
+   * will be created
+   * 
    */
-  readonly Event: { [K in keyof E_DICTIONARY]: Extract<keyof E_DICTIONARY, K> }
-
+  private getEventSubscribersCollection<E_NAME extends keyof E_DICTIONARY>(eventName: E_NAME) {
+    if (!this.#subscribers[eventName]) this.#subscribers[eventName] = new Set()
+    return this.#subscribers[eventName]
+  }
 
   /**
    * Iterates the list of subscribers and executes the callback, for a given event name
@@ -40,8 +30,9 @@ export default class EventedService<
       ? [E_NAME]
       : [E_NAME, Parameters<E_DICTIONARY[E_NAME]>[0] extends CustomEvent<infer T> ? T : never]
   ) {
-    const event = new CustomEvent(eventName as string, { detail: eventData })
-    for (const eventHandler of this.#subscribers[eventName]) {
+    const eventHandlersCollection = this.getEventSubscribersCollection(eventName)
+    const event = new CustomEvent(String(eventName), { detail: eventData })
+    for (const eventHandler of eventHandlersCollection) {
       eventHandler(event)
       // stop Event Propagation if requested by user
       if (event.cancelBubble) break
@@ -57,7 +48,8 @@ export default class EventedService<
     eventName: E_NAME,
     eventHandler: E_HANDLER
   ): void {
-    this.#subscribers[eventName].add(eventHandler)
+    const eventHandlersCollection = this.getEventSubscribersCollection(eventName)
+    eventHandlersCollection.add(eventHandler)
   }
 
 
@@ -68,6 +60,7 @@ export default class EventedService<
     eventName: E_NAME,
     eventHandler: E_HANDLER
   ): void {
-    this.#subscribers[eventName].delete(eventHandler)
+    const eventHandlersCollection = this.getEventSubscribersCollection(eventName)
+    eventHandlersCollection.delete(eventHandler)
   }
 }

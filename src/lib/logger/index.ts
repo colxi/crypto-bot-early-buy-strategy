@@ -1,165 +1,77 @@
-import { getTimeAsHHMMSS } from '../date'
-import { isChainable, LoggerColorRGB } from './helpers'
-import {
-  LoggerFontBackground,
-  LoggerFontColor,
-  LoggerFontStyle,
-  LoggerFormattedTextOptions,
-  LoggerOptions
-} from './types'
+import { config } from '@/config'
+import { getDateAsDDMMYYYY, getTimeAsHHMMSS } from '@/lib/date'
+import { createPath, getProjectRootDir } from '@/lib/file'
+import { Console } from '@/service/console'
+import fs from 'fs'
+import { isPlainObject } from 'lodash'
 
-export default class Logger {
-  constructor(options: LoggerOptions) {
-    this.#renderTime = options.renderTime || false
-    this.#contextTree = Array.isArray(options.context) ? options.context : [options.context]
+
+export class Logger {
+  constructor(filename: string) {
+    this.filename = filename
+    this.filepath = createPath(getProjectRootDir(), config.logsPath, `${this.filename}.txt`)
+    this.sharedLogFilepath = createPath(getProjectRootDir(), config.logsPath, `_last.txt`)
+
+    try { fs.truncateSync(this.sharedLogFilepath, 0) }
+    catch (e) { Console.log('Failed clearing GENERAL log file') }
+
+    this.isEnabled = true
+    this.lineBreakChar = '\n'
   }
 
+  private readonly filename: string
+  private readonly filepath: string
+  private readonly sharedLogFilepath: string
+  private readonly lineBreakChar: string
+  private isEnabled: boolean
 
-  #contextTree: LoggerFormattedTextOptions[]
-  #renderTime: boolean
+  private save(...data: unknown[]) {
+    if (!this.isEnabled) return
+    const time = `${getDateAsDDMMYYYY()} ${getTimeAsHHMMSS()}`
+    const formatted = data
+      .map(i => isPlainObject(i) ? JSON.stringify(i, null, 2) : Array.isArray(i) ? JSON.stringify(i) : String(i))
+      .join(' ')
 
-
-  /**
-   *
-   *
-   */
-  public createChild(options: LoggerOptions): Logger {
-    const context = Array.isArray(options.context) ? options.context : [options.context]
-    return new Logger({
-      renderTime: 'renderTime' in options ? options.renderTime : this.#renderTime,
-      context: [...this.#contextTree, ...context]
-    })
-  }
-
-
-  /**
-   *
-   *
-   */
-  static hexColor(hexColor: string): LoggerColorRGB {
-    return new LoggerColorRGB(hexColor)
-  }
-
-
-  /**
-   *
-   *
-   */
-  public hexColor(hexColor: string): LoggerColorRGB {
-    return new LoggerColorRGB(hexColor)
-  }
-
-
-  /**
-   *
-   *
-   */
-  public formatText(options: LoggerFormattedTextOptions): string {
-    let text = options.text
-    let result = ''
-    if (options.style) result += LoggerFontStyle[options.style]
-    if (options.background) {
-      result += options.background instanceof LoggerColorRGB
-        ? options.background.backgroundToANSI()
-        : LoggerFontBackground[options.background]
+    try {
+      fs.appendFileSync(this.filepath, `${time} : ${formatted}${this.lineBreakChar}`)
+      fs.appendFileSync(this.sharedLogFilepath, `${time} : ${formatted}${this.lineBreakChar}`)
     }
-    if (options.color) {
-      result += options.color instanceof LoggerColorRGB
-        ? options.color.colorToANSI()
-        : LoggerFontColor[options.color]
+    catch (e) {
+      Console.log('Err writing logs. LOGGER WILL BE DISABLED! ')
+      Console.log((e as any)?.message)
     }
-    if (options.padding) text = text.padStart(text.length + options.padding).padEnd(text.length + (options.padding * 2))
-    result += text
-    if (options.reset !== false) result += LoggerFontStyle.reset
-    return result
   }
 
-
-  /**
-   * 
-   * 
-   */
-  public error(message: string, ...args: unknown[]): void {
-    const formattedMessage = this.formatText({
-      color: 'red',
-      text: message
-    })
-    this.log(formattedMessage, ...args)
+  public lineBreak() {
+    if (!this.isEnabled) return
+    try {
+      fs.appendFileSync(this.filepath, this.lineBreakChar)
+      fs.appendFileSync(this.sharedLogFilepath, this.lineBreakChar)
+    }
+    catch (e) {
+      Console.log('Err writing logs (line break). LOGGER WILL BE DISABLED!')
+      Console.log((e as any)?.message)
+    }
   }
 
-
-  /**
-   *
-   *
-   */
-  public warn(message: string, ...args: unknown[]): void {
-    const formattedMessage = this.formatText({
-      color: 'yellow',
-      text: message
-    })
-    this.log(formattedMessage, ...args)
+  public log(...data: unknown[]) {
+    this.save('⚪', ...data)
   }
 
-
-  /**
-   *
-   *
-   */
-  public info(message: string, ...args: unknown[]): void {
-    const formattedMessage = this.formatText({
-      color: 'blue',
-      text: message
-    })
-    this.log(formattedMessage, ...args)
+  public success(...data: unknown[]) {
+    this.save('✅', ...data)
   }
 
-
-  /**
-   *
-   *
-   */
-  public log(message: string, ...args: unknown[]): void {
-    const items: any[] = []
-    // render the contexts
-    for (const context of this.#contextTree) {
-      const formatted = this.formatText(context)
-      if (!items.length) items.push(formatted)
-      else items[items.length - 1] = [items[0], formatted].join('')
-    }
-
-    // add an arrow at th end of te context
-    if (this.#contextTree[this.#contextTree.length - 1].background) {
-      const ending = this.formatText({
-        color: this.#contextTree[this.#contextTree.length - 1].background,
-        text: ''
-      })
-      items[items.length - 1] = [items[0], ending].join('')
-    }
-
-    // add message
-    items.push(message)
-    if (args.length) items.push('\n')
-
-    // metadata
-    for (const arg of args) {
-      const last: any = items[items.length - 1]
-      if (isChainable(last) && isChainable(arg)) items[items.length - 1] = [last, arg].join('')
-      else items.push(arg)
-    }
-
-    // If running in debug mode, remove all formatting special chars  in order to display 
-    // a clean  view of the messages in the browser console
-    const isDebugMode = typeof global.v8debug === 'object' || /--debug|--inspect/.test(process.execArgv.join(' '))
-    if (isDebugMode) {
-      /*eslint no-control-regex: "off"*/
-      const formatting = /((\[48|\[38|\[0)((;\d+)+)?m)|\u001B/g
-      const arrow = //g
-      for (const i in items) {
-        if (typeof items[i] === 'string') items[i] = items[i].replace(formatting, '').replace(arrow, '-->')
-      }
-    }
-
-    // render message data
-    console.log(getTimeAsHHMMSS(), ...items, isDebugMode ? '' : LoggerFontStyle.reset)
+  public info(...data: unknown[]) {
+    this.save('🔵', ...data)
   }
+
+  public warning(...data: unknown[]) {
+    this.save('🟠', ...data)
+  }
+
+  public error(...data: unknown[]) {
+    this.save('🔴', ...data)
+  }
+
 }

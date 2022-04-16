@@ -8,24 +8,23 @@ import {
 } from './types'
 
 
-type ServiceEvents = {
-  message: (event: WebsocketMessageEvent) => void
-  connect: (event: WebsocketConnectionEvent) => void
-}
-
-class WebsocketMessageEvent extends CustomEvent<{
+export class WebsocketMessageEvent extends CustomEvent<{
   context: WebsocketConnection,
   message: Record<string, unknown> | string
 }>{ }
 
-class WebsocketConnectionEvent extends CustomEvent<{
+export class WebsocketConnectionEvent extends CustomEvent<{
   context: WebsocketConnection,
 }>{ }
 
+type ServiceEvents = {
+  message: (event: WebsocketMessageEvent) => void | Promise<void>
+  connect: (event: WebsocketConnectionEvent) => void | Promise<void>
+}
 
 export default class WebsocketConnection extends EventedService<ServiceEvents>{
   constructor(config: WebsocketConnectionConfig) {
-    super(['message', 'connect'])
+    super()
     this.#log = config.logger || this.#log
     this.host = config.host
     this.reconnectOnDisconnection = config.reconnectOnDisconnection
@@ -107,7 +106,7 @@ export default class WebsocketConnection extends EventedService<ServiceEvents>{
       this.#sentMessagesCount = 0
     }
   }
-  
+
   public reconnect = async (): Promise<void> => {
     this.disconnect()
     await sleep(10000)

@@ -1,14 +1,18 @@
 export interface BotConfig {
-  socketAddr: string
   logsPath: string
   cleanLogsPathOnStart: boolean,
+  emailRecipient: `${string}@${string}.${string}`
+  signalHub: {
+    port: number
+    authToken: string
+    maxSignalAgeInMillis: number
+  },
   email: {
     host: string
     port: number
     user: string
     pass: string
   }
-  emailRecipient: `${string}@${string}.${string}`
   gate: {
     key: string
     secret: string
@@ -20,18 +24,28 @@ export interface BotConfig {
     maxSimultaneousOperations: number
     priceTrackingIntervalInMillis: number
     orderTrackingIntervalInMillis: number
-    emergencySellOrderDistancePercent: number
+    priceTrackingStrategy: 'ORDER_BOOK' | 'LAST_PRICE'
   },
   buy: {
+    fallbackToPartialAfterAttempts: number
     buyDistancePercent: number
     retryLimitInMillis: number
   },
   takeProfit: {
     triggerDistancePercent: number
     sellDistancePercent: number
+    orderExpiration: number
   }
   stopLoss: {
     triggerDistancePercent: number
     sellDistancePercent: number
+    orderExpiration: number
   },
+  emergencySell: {
+    sellDistancePercent: number
+    retryPercentModifier: number
+    retryPercentModifierLimit: number
+    stopOnPendingAmountUSD: number
+    maxAttempts: number
+  }
 }
