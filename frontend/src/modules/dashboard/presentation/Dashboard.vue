@@ -1,11 +1,13 @@
 <script lang="ts">
-import { defineComponent } from 'vue'
-import UIButton from '@/components/g-button/UIButton.vue'
+import { computed, defineComponent, onMounted, reactive, Ref, ref } from 'vue'
+import CLI from './cli/CLI.vue'
+import Console from './console/Console.vue'
+import LogsFiles from './log-files/LogsFiles.vue'
 
 export default defineComponent({
   name: 'Dashboard',
 
-  components: { UIButton },
+  components: { Console, CLI, LogsFiles },
 
   setup() {
     return {}
@@ -15,9 +17,30 @@ export default defineComponent({
 
 <template>
   <div class="wrapper">
-    <h2>Dashboard</h2>
+    <div class="col-left">
+      <Console />
+      <CLI />
+    </div>
+    <div class="col-right">
+      <LogsFiles />
+    </div>
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss" scoped >
+.wrapper {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  height: 100vh;
+  padding: 10px;
+  gap: 10px;
+}
+
+.col-left {
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 1fr 30px;
+  gap: 10px;
+  height: 100%;
+}
 </style>

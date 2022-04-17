@@ -1,3 +1,4 @@
+import { ServerActivity } from './service/activity-server/index'
 import { PriceTracker } from './service/price-tracker/index'
 import { VersionCheck } from './service/version-check/index'
 import { SignalsHub } from './service/signals-hub'
@@ -72,6 +73,7 @@ async function init(): Promise<void> {
   await GateMonitor.start()
   await OperationsMonitor.start()
   await PriceTracker.start()
+  await ServerActivity.start()
 }
 
 init().catch(e => { throw e })
