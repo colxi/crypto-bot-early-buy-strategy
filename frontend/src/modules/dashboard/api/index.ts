@@ -1,4 +1,4 @@
-import { Http } from '@/http/'
+import { Http } from '@/services/http'
 
 export const api = {
   async getLogFiles(): Promise<{ files: string[] }> {

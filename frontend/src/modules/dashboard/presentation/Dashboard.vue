@@ -30,7 +30,7 @@ export default defineComponent({
 <style lang="scss" scoped >
 .wrapper {
   display: grid;
-  grid-template-columns: 3fr 1fr;
+  grid-template-columns: 4fr 2fr;
   height: 100vh;
   padding: 10px;
   gap: 10px;

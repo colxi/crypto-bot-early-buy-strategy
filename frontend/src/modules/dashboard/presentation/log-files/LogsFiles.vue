@@ -87,7 +87,7 @@ export default defineComponent({
   }
 
   .modal__container {
-    width: 600px;
+    width: 800px;
     height: 80%;
     background: #1d1e20;
     margin: auto;
