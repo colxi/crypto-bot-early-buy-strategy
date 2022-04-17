@@ -47,5 +47,12 @@ export interface BotConfig {
     retryPercentModifierLimit: number
     stopOnPendingAmountUSD: number
     maxAttempts: number
+  },
+  publicApi: {
+    port: number,
+    users: Record<string, string>
+  },
+  publicWebsocket: {
+    port: number,
   }
 }

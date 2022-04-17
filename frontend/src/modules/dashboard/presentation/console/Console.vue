@@ -42,14 +42,12 @@ export default defineComponent({
           behavior: 'smooth',
         })
       }, 100)
-      console.log('a', currentScrollPosition, availableScroll)
     })
 
     onMounted(() => {
       const socket = new WebSocket('ws://127.0.0.1:9998')
 
       socket.addEventListener('message', (event) => {
-        console.log(event.data)
         data.add(JSON.parse(event.data))
       })
 

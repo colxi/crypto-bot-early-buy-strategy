@@ -11,6 +11,7 @@ import { CLI } from './service/cli'
 import { GateMonitor } from './service/gate-monitor'
 import { OperationsMonitor } from './service/operations-monitor'
 import { exec } from 'child_process'
+import { startHTTPServerService } from './service/http-server'
 
 
 process.on('uncaughtException', function err(e) {
@@ -74,6 +75,7 @@ async function init(): Promise<void> {
   await OperationsMonitor.start()
   await PriceTracker.start()
   await ServerActivity.start()
+  await startHTTPServerService()
 }
 
 init().catch(e => { throw e })

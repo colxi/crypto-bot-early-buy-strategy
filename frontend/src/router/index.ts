@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Dashboard from '../modules/dashboard/route'
+import Login from '../modules/login/route'
 
 const routes: Array<RouteRecordRaw> = [
+  Login,
   Dashboard,
 ]
 

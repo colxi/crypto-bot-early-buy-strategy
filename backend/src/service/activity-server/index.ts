@@ -31,7 +31,7 @@ export class ServerActivityService extends EventedService<ServiceEvents>{
    */
   public async start() {
     Console.log('[ACTIVITY-SERVER] Starting...')
-    this.server = new WebSocket.Server({ port: 9998 })
+    this.server = new WebSocket.Server({ port: config.publicWebsocket.port })
     /** Handle new connections */
     this.server.on('connection', (ws, message) => {
       Console.log('[ACTIVITY-SERVER] connection!', message.socket?.remoteAddress || 'UNKNOWN_ADDRESS')

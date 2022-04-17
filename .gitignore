@@ -3,7 +3,7 @@ early-buy-bot.code-workspace
 config.ts
 
 # Logs
-operation-logs/*
+backend/operation-logs/*
 logs
 *.log
 npm-debug.log*

@@ -1,3 +1,19 @@
+<script lang="ts">
+import { defineComponent, ref } from 'vue'
+import { Http } from '@/http/'
+import { useRouter } from 'vue-router'
+
+export default defineComponent({
+  name: 'App',
+
+  setup() {
+    const userData = Http.get({ url: '/user/me' })
+    useRouter().push('/dashboard')
+  },
+})
+</script>
+
+
 <template>
   <router-view />
 </template>

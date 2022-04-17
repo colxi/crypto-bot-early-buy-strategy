@@ -1,5 +1,6 @@
 <script lang="ts">
-import { computed, defineComponent, onMounted, reactive, Ref, ref } from 'vue'
+import { api } from '@/modules/dashboard/api'
+import { computed, defineComponent, onBeforeMount, onMounted, reactive, Ref, ref } from 'vue'
 
 export default defineComponent({
   name: 'Dashboard',
@@ -7,7 +8,7 @@ export default defineComponent({
   components: {},
 
   setup() {
-    const logFiles = ref([
+    const logFiles = ref<string[]>([
       '23-03-21 23:34 BTC',
       '23-03-21 23:34 BTC',
       '23-03-21 23:34 BTC',
@@ -16,17 +17,26 @@ export default defineComponent({
       '23-03-21 23:34 BTC',
       '23-03-21 23:34 BTC',
     ])
+    const logData = ref<string>('')
 
     const isModalVisible = ref(false)
 
-    const onLogFileClick = (): void => {
+    const onLogFileClick = async (index: number): Promise<void> => {
+      const { data } = await api.getLog(logFiles.value[index])
+      logData.value = data
       isModalVisible.value = true
     }
+
     const onModalOverrideClick = (): void => {
       isModalVisible.value = false
     }
 
-    return { onModalOverrideClick, onLogFileClick, isModalVisible, logFiles }
+    onBeforeMount(async () => {
+      const { files } = await api.getLogFiles()
+      logFiles.value = files
+    })
+
+    return { onModalOverrideClick, onLogFileClick, isModalVisible, logFiles, logData }
   },
 })
 </script>
@@ -42,53 +52,7 @@ export default defineComponent({
     <div class="modal__container">
       <div>Header</div>
       <div class="modal__body">
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
-        <div>ggg</div>
+        <pre>{{ logData }}</pre>
       </div>
     </div>
   </div>
