@@ -1,4 +1,4 @@
-import { ui } from './../../ui/index'
+// import { ui } from './../../ui/index'
 import { TimeInMillis } from '@/lib/date'
 import { TradingBot } from '../bot'
 import { Console } from '../console'
@@ -14,7 +14,7 @@ class OperationsMonitorService {
 
   async updateWidget() {
     const operations = Object.values(TradingBot.operations)
-    ui.operation.update(operations)
+    // ui.operation.update(operations)
   }
 }
 

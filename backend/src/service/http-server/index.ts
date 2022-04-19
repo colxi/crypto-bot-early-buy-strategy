@@ -9,7 +9,7 @@ export async function startHTTPServerService() {
     protocol: 'http',
     port: config.publicApi.port,
     verbose: false,
-    auth: HttpServerSessions.isValidSessionToken,
+    auth: (token) => HttpServerSessions.isValidSessionToken(token),
     cors: {
       credentials: true,
       origin: "*"

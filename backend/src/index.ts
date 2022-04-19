@@ -1,15 +1,15 @@
 import { ServerActivity } from './service/activity-server/index'
 import { PriceTracker } from './service/price-tracker/index'
-import { VersionCheck } from './service/version-check/index'
+// import { VersionCheck } from './service/version-check/index'
 import { SignalsHub } from './service/signals-hub'
 import { Gate } from './service/gate-client'
 import { TradingBot } from './service/bot'
 import { validateConfig } from './config/validate-config'
-import { ui } from './ui'
+// import { ui } from './ui'
 import { Console } from './service/console'
-import { CLI } from './service/cli'
-import { GateMonitor } from './service/gate-monitor'
-import { OperationsMonitor } from './service/operations-monitor'
+// import { CLI } from './service/cli'
+// import { GateMonitor } from './service/gate-monitor'
+// import { OperationsMonitor } from './service/operations-monitor'
 import { exec } from 'child_process'
 import { startHTTPServerService } from './service/http-server'
 
@@ -18,7 +18,7 @@ process.on('uncaughtException', function err(e) {
   const errorMessage = e instanceof Error ? e.message : String(e)
   Console.log('FATAL ERROR, please restart the bot!')
   Console.log(errorMessage)
-  void ui.screen.destroy()
+  // void ui.screen.destroy()
   console.log()
   console.log('FATAL ERROR:')
   console.log()
@@ -64,15 +64,15 @@ async function checkWinQuickMode() {
 
 async function init(): Promise<void> {
   validateConfig()
-  await Console.start()
+  // await Console.start()
   // await VersionCheck.start()
   // await checkWinQuickMode()
   await Gate.start()
   await SignalsHub.start()
   await TradingBot.start()
-  await CLI.start()
-  await GateMonitor.start()
-  await OperationsMonitor.start()
+  // await CLI.start()
+  // await GateMonitor.start()
+  // await OperationsMonitor.start()
   await PriceTracker.start()
   await ServerActivity.start()
   await startHTTPServerService()

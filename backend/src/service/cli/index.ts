@@ -5,7 +5,7 @@ import { config } from '@/config'
 import { clearDir, createPath, getProjectRootDir } from '@/lib/file'
 import { Gate } from '@/service/gate-client'
 import { AssetPair, SymbolName } from '@/service/gate-client/types'
-import { ui } from '@/ui'
+// import { ui } from '@/ui'
 import { Console } from '../console'
 import { TradingBot } from '../bot'
 import { OperationEndReason } from '../bot/operation/types'
@@ -40,14 +40,14 @@ class CLIService {
 
   async initPrompt() {
     while (true) {
-      const message = await ui.inputBox.prompt()
-      await this.interpreter(message)
+      // const message = await ui.inputBox.prompt()
+      // await this.interpreter(message)
     }
   }
 
   // promptInterface: readline.Interface
 
-  private async interpreter(input: string) {
+  public async interpreter(input: string) {
     if (!input.trim()) return
     const [command, ...params] = input.split(' ')
     const parameters = params.join(' ').trim()

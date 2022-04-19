@@ -26,7 +26,7 @@ export class Balance {
     this.element.setLine(0, `Available Balance : ${toFixed(Number(balanceInUSDT), 4)} USDT`)
     this.element.setLine(1, `Gate API Latency: ${latency} ms`)
     // this.element.setContent(`Available Balance : ${balanceInUSDT} USDT\n Latency: 13`)
-    this.ui.screen.render()
+    // this.ui.screen.render()
     //
   }
 }

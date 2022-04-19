@@ -1,25 +1,32 @@
 <script lang="ts">
-import { computed, defineComponent, onMounted, reactive, Ref, ref } from 'vue'
-import CLI from './cli/CLI.vue'
-import Console from './console/Console.vue'
+import Vue, { defineComponent, ref } from 'vue'
+import ConsoleInput from './console-input/ConsoleInput.vue'
+import ConsoleOutput from './console-output/ConsoleOutput.vue'
 import LogsFiles from './log-files/LogsFiles.vue'
 
 export default defineComponent({
   name: 'Dashboard',
 
-  components: { Console, CLI, LogsFiles },
+  components: { ConsoleOutput, ConsoleInput, LogsFiles },
 
   setup() {
-    return {}
+    const consoleInputRef = ref<Vue.ComponentPublicInstance>()
+    const onConsoleClick = (): void => {
+      if (!consoleInputRef.value) return
+      console.log(consoleInputRef.value)
+      consoleInputRef.value.$el.focus()
+    }
+
+    return { consoleInputRef, onConsoleClick }
   },
 })
 </script>
 
 <template>
   <div class="wrapper">
-    <div class="col-left">
-      <Console />
-      <CLI />
+    <div class="col-left" @click="onConsoleClick">
+      <ConsoleOutput />
+      <ConsoleInput ref="consoleInputRef" />
     </div>
     <div class="col-right">
       <LogsFiles />

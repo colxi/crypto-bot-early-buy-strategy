@@ -37,13 +37,13 @@ export class ConsoleUI {
         case 'up': {
           if (key.shift) this.element.scroll(-5)
           else this.element.scroll(-1)
-          this.ui.screen.render()
+          // this.ui.screen.render()
           break
         }
         case 'down': {
           if (key.shift) this.element.scroll(5)
           else this.element.scroll(1)
-          this.ui.screen.render()
+          // this.ui.screen.render()
           break
         }
       }
@@ -65,13 +65,13 @@ export class ConsoleUI {
     if (this.element.getLines().length > CONSOLE_MAX_LINES) this.element.shiftLine(0)
     this.element.pushLine(content)
     this.element.setScrollPerc(100)
-    this.ui.screen.render()
+    // this.ui.screen.render()
   }
 
 
   public clear() {
     this.element.setText('')
     this.element.setContent('')
-    this.ui.screen.render()
+    // this.ui.screen.render()
   }
 }

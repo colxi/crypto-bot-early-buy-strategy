@@ -11,8 +11,8 @@ export const user = {
   ) => {
     const username = (payload.body as any)?.username
     const password = (payload.body as any)?.password
-    const userExists = Object.keys(config.app.users).includes(username)
-    const isValidPassword = password === config.app.users[username]
+    const userExists = Object.keys(config.publicApi.users).includes(username)
+    const isValidPassword = password === config.publicApi.users[username]
     if (userExists && isValidPassword) {
       const authToken = crypto.randomBytes(20).toString('hex')
       HttpServerSessions.createSession({

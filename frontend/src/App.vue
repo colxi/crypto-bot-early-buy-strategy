@@ -1,13 +1,14 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
-import { Http } from '@/http/'
+import { HttpService } from '@/services/http/'
 import { useRouter } from 'vue-router'
-
+import { CliService } from '@/services/cli'
 export default defineComponent({
   name: 'App',
 
   setup() {
-    const userData = Http.get({ url: '/user/me' })
+    CliService.start()
+    const userData = HttpService.get({ url: '/user/me' })
     useRouter().push('/dashboard')
   },
 })

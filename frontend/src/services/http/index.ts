@@ -1,17 +1,17 @@
 import router from '@/router'
 
-class HttpService {
-  baseUrl: string = 'http://127.0.0.1:3100'
+export class HttpService {
+  private static baseUrl: string = 'http://127.0.0.1:3100'
 
-  get authToken(): string {
+  public static get authToken(): string {
     return localStorage.getItem('auth-token') || ''
   }
 
-  set authToken(token: string) {
+  public static set authToken(token: string) {
     localStorage.setItem('auth-token', token)
   }
 
-  private httpRequest = async (options: { url: string, method: string, body?: any }): Promise<any> => {
+  private static async httpRequest(options: { url: string, method: string, body?: any }): Promise<any> {
     console.log('request!', options.url, options.method)
     const response: Response = await fetch(
       options.url,
@@ -36,11 +36,11 @@ class HttpService {
     return await response.json()
   }
 
-  public setAuthToken(token: string): void {
+  public static setAuthToken(token: string): void {
     this.authToken = token
   }
 
-  public async get(options: { url: string }): Promise<any> {
+  public static async get(options: { url: string }): Promise<any> {
     return await this.httpRequest({
       url: Array.from(options.url).shift() === '/'
         ? `${this.baseUrl}${options.url}`
@@ -49,7 +49,7 @@ class HttpService {
     })
   }
 
-  public async post(options: { url: string, data: Record<string, unknown> | any[] | null }): Promise<any> {
+  public static async post(options: { url: string, data: Record<string, unknown> | any[] | null }): Promise<any> {
     const requestBody = JSON.stringify(options.data) || null
     return await this.httpRequest({
       url: Array.from(options.url).shift() === '/'
@@ -60,5 +60,3 @@ class HttpService {
     })
   }
 }
-
-export const Http = new HttpService()

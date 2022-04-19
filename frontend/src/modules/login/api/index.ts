@@ -1,9 +1,9 @@
-import { Http } from '@/services/http'
+import { HttpService } from '@/services/http'
 
 
 export const api = {
   async login(username: string, password: string): Promise<{ authToken: string }> {
-    return Http.post({
+    return HttpService.post({
       url: '/user/login',
       data: { username, password }
     })

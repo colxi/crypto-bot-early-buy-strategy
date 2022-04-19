@@ -1,7 +1,7 @@
 <script lang="ts">
 import { defineComponent, ref } from 'vue'
 import UIButton from '@/components/ui-button/UIButton.vue'
-import { Http } from '@/http'
+import { HttpService } from '@/services/http/'
 import { api } from '@/modules/login/api'
 import { useRouter } from 'vue-router'
 
@@ -17,7 +17,7 @@ export default defineComponent({
 
     const onSubmitButtonClick = async (): Promise<void> => {
       const { authToken } = await api.login(username.value, password.value)
-      Http.setAuthToken(authToken)
+      HttpService.setAuthToken(authToken)
       router.push('/dashboard')
     }
 

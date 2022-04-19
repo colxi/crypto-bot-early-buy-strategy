@@ -1,5 +1,5 @@
 import { getTimeAsHHMMSS } from '@/lib/date'
-import { ui } from './../../ui/index'
+// import { ui } from './../../ui/index'
 import { ServerActivity } from './../activity-server/index'
 
 export class Console {
@@ -9,12 +9,14 @@ export class Console {
 
   public static log(...args: (number | string | boolean | object | null)[]) {
     if (!args.length) return
-    ui.console.print(...args)
+    // ui.console.print(...args)
+    console.log(...args)
     const time = getTimeAsHHMMSS()
     ServerActivity.send(JSON.stringify([time, ...args]))
   }
 
   public static clear() {
-    ui.console.clear()
+    console.clear()
+    // ui.console.clear()
   }
 }
