@@ -1,7 +1,9 @@
+import { config } from '@/config'
 import router from '@/router'
 
+
 export class HttpService {
-  private static baseUrl: string = 'http://127.0.0.1:3100'
+  private static baseUrl: string = `${config.publicApi.host}:${config.publicApi.port}`
 
   public static get authToken(): string {
     return localStorage.getItem('auth-token') || ''
